@@ -330,8 +330,14 @@ constexpr Row kGeneralRows[] = {
     {Kind::Value, kCheckUpdates, "CHECK FOR UPDATES"},
 };
 
-// a page of its own, apart from the recomp's settings
+// a page of its own, apart from the recomp's settings (with quick access to Device Profile & Graphics Preset on top)
 constexpr Row kCheatRows[] = {
+    {Kind::Heading, -1, "DEVICE PROFILE"},
+    {Kind::Value, kRecommendedPreset, "RECOMMENDED FOR PHONE"},
+    {Kind::Value, kGraphicsPreset, "GRAPHICS PRESET"},
+    {Kind::Value, kScreenFilter, "SCREEN FILTER"},
+    {Kind::Value, kRenderResolution, "RENDER RESOLUTION"},
+    {Kind::Value, kFpsCounter, "FPS COUNTER"},
     {Kind::Heading, -1, "WEAPONS"},
     {Kind::Value, kWeaponSkin, "WEAPON SKIN"},
     {Kind::Value, kInfiniteAmmo, "INFINITE AMMO"},
@@ -724,8 +730,11 @@ void StepInputRow(int id, int step, char (&text)[64]) {
             std::snprintf(text, sizeof(text), "%s", touch::StickModeName());
             break;
         case kTouchEdit:
-            // any step opens the editor over the screen
-            if (step) touch::EditLayout();
+            // any step opens the editor over the screen (and closes the gear panel if open)
+            if (step) {
+                g_open = false;
+                touch::EditLayout();
+            }
             std::snprintf(text, sizeof(text), "OPEN");
             break;
         case kCheckUpdates:
@@ -937,6 +946,13 @@ void PollCapture() {
 bool CaptureFree() { return g_capture < 0 && ImGui::GetFrameCount() > g_capture_done + 1; }
 
 void ValueRow(const Row& r) {
+    if (r.id == kCredit) {
+        const Credit* c = CreditOf(r);
+        if (!c || !c->value) return;
+        int step = OptionRow(r.label, Ui(c->value).c_str());
+        if (step && c->url) SDL_OpenURL(c->url);
+        return;
+    }
     int step = OptionRow(r.label, Ui(RowText(r.id, 0)).c_str());
     if (step) RowText(r.id, step);
 }
@@ -1080,7 +1096,33 @@ void DrawPanel() {
     constexpr ImGuiWindowFlags kFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
                                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar;
     if (ImGui::Begin("##settings", nullptr, kFlags)) {
-        DrawTitle("CHEATS");
+        struct Tab {
+            int page;
+            const char* label;
+        };
+        constexpr Tab kTabs[] = {
+            {kCheatsPage, "CHEATS"},
+            {0, "GRAPHICS"},
+            {kTouchPage, "TOUCH"},
+            {kGeneralPage, "GENERAL"},
+            {kCreditsPage, "CREDITS"},
+        };
+        constexpr int kTabCount = int(std::size(kTabs));
+        float gap = ImGui::GetStyle().ItemSpacing.x;
+        float tw = (ImGui::GetContentRegionAvail().x - gap * (kTabCount - 1)) / kTabCount;
+        for (int i = 0; i < kTabCount; i++) {
+            if (i > 0) ImGui::SameLine();
+            bool active = g_page == kTabs[i].page;
+            if (active) {
+                ImGui::PushStyleColor(ImGuiCol_Button, kHighlight);
+                ImGui::PushStyleColor(ImGuiCol_Text, kHeading);
+            }
+            if (ImGui::Button(Ui(kTabs[i].label).c_str(), ImVec2(tw, 0))) {
+                g_page = kTabs[i].page;
+                g_capture = -1;
+            }
+            if (active) ImGui::PopStyleColor(2);
+        }
         ImGui::Separator();
         float footer = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetFrameHeightWithSpacing() + em;
         // a scrollbar a thumb can take, not the desktop's thin one
