@@ -1,4 +1,4 @@
-# Builds the APK via GitHub Actions (supports manual trigger via "Run workflow" and automatic release on v* tags).
+# Builds the APK via GitHub Actions (supports push to main, manual trigger via "Run workflow", and automatic release on v* tags).
 # The recompiler uses ci/default.xbe.enc decrypted with XBE_KEY (defaults to BlackUSA2026RecompKey if secret is not set).
 # Includes C/C++ compiler caching (ccache) so subsequent builds after editing C++/Java take ~3-5 minutes instead of ~60 minutes.
 name: Build APK
@@ -17,6 +17,7 @@ on:
         default: false
         type: boolean
   push:
+    branches: ["main"]
     tags: ["v*"]
 
 permissions:
@@ -32,7 +33,6 @@ jobs:
     env:
       NDK_VERSION: 28.2.13676358
       CMAKE_VERSION: 3.31.6
-      CCACHE_DIR: ${{ runner.temp }}\ccache
       CCACHE_MAXSIZE: 4G
 
     steps:
@@ -51,13 +51,15 @@ jobs:
         run: |
           choco install ccache -y --no-progress
           $ccachePath = (Get-Command ccache).Source
+          $ccacheDir = Join-Path $env:RUNNER_TEMP "ccache"
           Write-Output "CCACHE_BIN=$ccachePath" >> $env:GITHUB_ENV
+          Write-Output "CCACHE_DIR=$ccacheDir" >> $env:GITHUB_ENV
 
       - name: Restore C++ & Recompiler Cache
         uses: actions/cache@v4
         with:
           path: |
-            ${{ env.CCACHE_DIR }}
+            ${{ runner.temp }}/ccache
             out/build/android-tools
             third_party/SDL
           key: black-android-cache-${{ hashFiles('config/game.toml', 'CMakeLists.txt', 'app/build.gradle') }}-${{ github.sha }}
@@ -67,7 +69,7 @@ jobs:
 
       - name: Android SDK packages
         shell: cmd
-        run: call "%ANDROID_HOME%\cmdline-tools\latest\bin\sdkmanager.bat" --install "platforms;android-34" "ndk;%NDK_VERSION%" "cmake;%CMAKE_VERSION%" >nul
+        run: call "%ANDROID_HOME%\cmdline-tools\latest\bin\sdkmanager.bat" --install "platforms;android-34" "ndk;%NDK_VERSION%" "ndk;28.2.13676358" "cmake;%CMAKE_VERSION%" >nul
 
       - name: Decrypt default.xbe
         shell: bash
