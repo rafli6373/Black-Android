@@ -6,7 +6,8 @@
 
 <p align="center">
   An unofficial native Android port of the original Xbox version of <b>Black</b>,<br>
-  statically recompiled with <a href="https://github.com/TGP482/XboxXBE-Recomp">XboxXBE-Recomp</a> and drawn with Vulkan.
+  originally created by <a href="https://github.com/RanggaCasper/Black-Android">Rangga Casper</a>, statically recompiled with <a href="https://github.com/TGP482/XboxXBE-Recomp">XboxXBE-Recomp</a> and drawn with Vulkan.<br>
+  <sub>Custom Build & Fork maintained by <a href="https://github.com/rafli6373">rafli6373</a></sub>
 </p>
 
 <p align="center">
@@ -23,7 +24,7 @@
 
 | File | Size | SHA-256 |
 | --- | --- | --- |
-| [`{{APK}}`](https://github.com/RanggaCasper/Black-Android/releases/download/{{TAG}}/{{APK}}) | {{SIZE}} | `{{SHA256}}` |
+| [`{{APK}}`](https://github.com/{{REPO}}/releases/download/{{TAG}}/{{APK}}) | {{SIZE}} | `{{SHA256}}` |
 
 ## 🚀 Installation
 
@@ -55,6 +56,9 @@ The settings are in the game's own options menu, one page per group. Android's b
 
 ## 🙏 Credits
 
-Built on [XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp) by **TGP482**, with [SDL](https://github.com/libsdl-org/SDL), [glslang](https://github.com/KhronosGroup/glslang), [toml++](https://github.com/marzer/tomlplusplus) and [Dear ImGui](https://github.com/ocornut/imgui).
+- **Original Android Port**: [Rangga Casper](https://github.com/RanggaCasper) ([RanggaCasper/Black-Android](https://github.com/RanggaCasper/Black-Android))
+- **Static Recompiler & Runtime**: [XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp) by **TGP482**
+- **Fork & Custom Build**: [rafli6373](https://github.com/rafli6373)
+- **Contributors & Libraries**: [datfooldive](https://github.com/datfooldive), [bagasromadon](https://github.com/bagasromadon), Zukiru, [SDL](https://github.com/libsdl-org/SDL), [glslang](https://github.com/KhronosGroup/glslang), [toml++](https://github.com/marzer/tomlplusplus) and [Dear ImGui](https://github.com/ocornut/imgui).
 
 ---

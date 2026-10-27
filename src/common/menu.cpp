@@ -57,6 +57,12 @@ namespace dynres {
 uint32_t Percent();
 }  // namespace dynres
 
+// native/vulkan.cpp: detected GPU/RAM recommendation and preset tier (2 LOW, 3 MEDIUM, 4 HIGH, 5 ULTRA)
+namespace gpu {
+uint32_t RecommendedPreset(std::string* short_gpu_out = nullptr);
+std::string DeviceRecommendation();
+}  // namespace gpu
+
 // native/update.cpp: the activity asks GitHub for a newer release and says what it found
 namespace host {
 void CheckForUpdates();
@@ -94,15 +100,22 @@ constexpr std::pair<ImGuiCol, ImVec4> kPanelColors[] = {
 
 constexpr uint32_t kAnisoValues[] = {0, 2, 4, 8, 16};
 const char* const kAnisoNames[] = {"GAME DEFAULT", "2x", "4x", "8x", "16x"};
-constexpr uint32_t kDistances[] = {1, 2, 4, 8};
-const char* const kDistanceNames[] = {"GAME DEFAULT", "2x", "4x", "8x"};
+constexpr uint32_t kDistances[] = {1, 2, 4, 8, 16};
+const char* const kDistanceNames[] = {"GAME DEFAULT", "2x", "4x", "8x", "16x"};
 constexpr uint32_t kAntiAliasings[] = {0, 1, 2};
 const char* const kAntiAliasingNames[] = {"OFF", "FXAA", "SSAA 2X"};
 constexpr uint32_t kFmvScales[] = {0, 1};
 const char* const kFmvScaleNames[] = {"FILL", "4:3"};
-constexpr uint32_t kScreenFilters[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-const char* const kScreenFilterNames[] = {"OFF",  "CRT LIGHT", "CRT STRONG",   "SHARPEN", "VIBRANT",
-                                          "NOIR", "SEPIA",     "NIGHT VISION", "VHS"};
+constexpr uint32_t kScreenFilters[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+const char* const kScreenFilterNames[] = {"OFF",       "CRT LIGHT", "CRT STRONG",   "SHARPEN",
+                                          "VIBRANT",   "NOIR",      "SEPIA",        "NIGHT VISION",
+                                          "VHS",       "CINEMATIC", "THERMAL",      "CYBERPUNK"};
+constexpr uint32_t kWeaponSkins[] = {0, 1, 2, 3, 4, 5, 6, 7};
+const char* const kWeaponSkinNames[] = {"OFF",         "CODM GOLD",   "CODM DIAMOND", "CODM DAMASCUS",
+                                        "DARK MATTER", "MAGMA LAVA",  "CYBER NEON",   "JADE EMERALD"};
+const char* const kGraphicsPresetNames[] = {"CUSTOM",            "AUTO (RECOMMENDED)", "LOW (BATTERY)",
+                                            "MEDIUM (BALANCED)", "HIGH (GAMING)",      "ULTRA (FLAGSHIP)",
+                                            "ESPORTS (MAX FPS)"};
 constexpr uint32_t kAudioOutputs[] = {audio::kOutputAuto, audio::kOutputMono, audio::kOutputStereo,
                                       audio::kOutputSurround};
 const char* const kAudioOutputNames[] = {"AUTOMATIC", "MONO", "2.0 STEREO", "5.1 SURROUND"};
@@ -248,19 +261,23 @@ enum RowId { kRenderResolution, kMaxFps, kVsync, kFpsCounter, kAniso, kReloadBlu
              kCheckUpdates, kTouchSensitivity, kLeftDeadzone, kRightDeadzone, kLeftSensitivity, kRightSensitivity,
              kScreenFilter, kGyroInvertX, kGyroInvertY, kUnlockLevels, kUnlockBlackOps, kTouchSkin, kCredit, kBloom,
              kFog, kAntiAliasing, kHdr, kEsp, kAimbot, kTouchStick, kDynamicRes, kDynamicTarget, kDynamicMin,
-             kDynamicMax, kDynamicHold };
+             kDynamicMax, kDynamicHold, kRecommendedPreset, kGraphicsPreset, kWeaponSkin };
 
 using rows::Kind;
 using rows::Row;
 
 // the recomp's settings in pages of their own, grouped within; the game's options menu shows the headings too
 constexpr Row kGraphicsRows[] = {
+    {Kind::Heading, -1, "DEVICE PROFILE"},
+    {Kind::Value, kRecommendedPreset, "RECOMMENDED FOR PHONE"},
+    {Kind::Value, kGraphicsPreset, "GRAPHICS PRESET"},
     {Kind::Heading, -1, "DISPLAY"},
     {Kind::Value, kRenderResolution, "RENDER RESOLUTION"},
     {Kind::Value, kFov, "FIELD OF VIEW"},
     {Kind::Value, kViewmodelFov, "VIEWMODEL FIELD OF VIEW"},
     {Kind::Value, kFmvScale, "FMV SCALE"},
     {Kind::Value, kScreenFilter, "SCREEN FILTER"},
+    {Kind::Value, kWeaponSkin, "WEAPON SKIN"},
     {Kind::Heading, -1, "PERFORMANCE"},
     {Kind::Value, kVsync, "VERTICAL SYNC"},
     {Kind::Value, kMaxFps, "MAX FRAME RATE"},
@@ -316,6 +333,7 @@ constexpr Row kGeneralRows[] = {
 // a page of its own, apart from the recomp's settings
 constexpr Row kCheatRows[] = {
     {Kind::Heading, -1, "WEAPONS"},
+    {Kind::Value, kWeaponSkin, "WEAPON SKIN"},
     {Kind::Value, kInfiniteAmmo, "INFINITE AMMO"},
     {Kind::Value, kInfiniteGrenades, "INFINITE GRENADES"},
     {Kind::Value, kRapidFire, "RAPID FIRE"},
@@ -341,6 +359,7 @@ struct Credit {
 constexpr Credit kCredits[] = {
     {"CONTRIBUTORS", nullptr, nullptr},
     {"Rangga Casper", "ANDROID PORT", "https://github.com/RanggaCasper"},
+    {"rafli6373", "CUSTOM BUILD & MOD", "https://github.com/rafli6373"},
     {"DATFOOLDIVE", "ANY WEAPON IN ANY LEVEL", "https://github.com/datfooldive"},
     {"BAGASROMADON", "BUTTON SKIN", "https://github.com/bagasromadon"},
     {"Zukiru", "HDR SHADER", nullptr},
@@ -431,13 +450,132 @@ void PercentText(uint32_t percent, char (&text)[64]) {
     std::snprintf(text, sizeof(text), "%u%% (%ux%u)", percent, out.width * percent / 100, out.height * percent / 100);
 }
 
+void ApplyGraphicsPreset(uint32_t preset, Settings& s, game::Options& o) {
+    uint32_t tier = preset == 1 ? gpu::RecommendedPreset() : preset;
+    if (tier == 2) {  // LOW (BATTERY)
+        s.render_percent = 65;
+        o.dynamic_resolution = true;
+        o.dynamic_target_fps = 60;
+        o.dynamic_min_percent = 45;
+        o.dynamic_max_percent = 75;
+        o.dynamic_hold = 5;
+        s.vsync = false;
+        s.fps_cap = 60;
+        s.aniso = 2;
+        o.draw_distance = 1;
+        o.reload_blur = false;
+        o.bloom = false;
+        o.fog = true;
+        o.anti_aliasing = 0;
+        o.hdr = false;
+    } else if (tier == 3) {  // MEDIUM (BALANCED)
+        s.render_percent = 85;
+        o.dynamic_resolution = true;
+        o.dynamic_target_fps = 60;
+        o.dynamic_min_percent = 65;
+        o.dynamic_max_percent = 100;
+        o.dynamic_hold = 4;
+        s.vsync = false;
+        s.fps_cap = 60;
+        s.aniso = 4;
+        o.draw_distance = 2;
+        o.reload_blur = true;
+        o.bloom = true;
+        o.fog = true;
+        o.anti_aliasing = 1;
+        o.hdr = false;
+    } else if (tier == 4) {  // HIGH (GAMING)
+        s.render_percent = 100;
+        o.dynamic_resolution = false;
+        s.vsync = false;
+        s.fps_cap = kFpsCapRefresh;
+        s.aniso = 8;
+        o.draw_distance = 4;
+        o.reload_blur = true;
+        o.bloom = true;
+        o.fog = true;
+        o.anti_aliasing = 1;
+        o.hdr = true;
+    } else if (tier == 5) {  // ULTRA (FLAGSHIP)
+        s.render_percent = 150;
+        o.dynamic_resolution = false;
+        s.vsync = false;
+        s.fps_cap = 0;
+        s.aniso = 16;
+        o.draw_distance = 8;
+        o.reload_blur = true;
+        o.bloom = true;
+        o.fog = true;
+        o.anti_aliasing = 2;
+        o.hdr = true;
+    } else if (tier == 6) {  // ESPORTS (MAX FPS)
+        s.render_percent = 75;
+        o.dynamic_resolution = true;
+        o.dynamic_target_fps = 120;
+        o.dynamic_min_percent = 50;
+        o.dynamic_max_percent = 85;
+        o.dynamic_hold = 3;
+        s.vsync = false;
+        s.fps_cap = 0;
+        o.fps_counter = true;
+        s.aniso = 4;
+        o.draw_distance = 4;
+        o.reload_blur = false;
+        o.bloom = false;
+        o.fog = false;
+        o.anti_aliasing = 0;
+        o.hdr = false;
+        o.fov = 90;
+    }
+}
+
+bool IsPresetControlledRow(int id) {
+    switch (id) {
+        case kRenderResolution:
+        case kVsync:
+        case kMaxFps:
+        case kDynamicRes:
+        case kDynamicTarget:
+        case kDynamicMin:
+        case kDynamicMax:
+        case kAniso:
+        case kDrawDistance:
+        case kReloadBlur:
+        case kBloom:
+        case kFog:
+        case kAntiAliasing:
+        case kHdr:
+            return true;
+        default:
+            return false;
+    }
+}
+
 // the display rows that are no ON / OFF, stepped first; false for another row
 bool StepDisplayRow(int id, int step, Settings& s, char (&text)[64]) {
     game::Options& o = game::Opt();
     switch (id) {
+        case kRecommendedPreset:
+            if (step) {
+                o.graphics_preset = 1;
+                ApplyGraphicsPreset(1, s, o);
+            }
+            std::snprintf(text, sizeof(text), "%s", gpu::DeviceRecommendation().c_str());
+            return true;
+        case kGraphicsPreset: {
+            if (step) {
+                int cur = o.graphics_preset >= 1 && o.graphics_preset <= 6 ? int(o.graphics_preset) - 1 : -1;
+                int next = cur < 0 ? (step > 0 ? 0 : 5) : StepIndex(cur, step, 6);
+                o.graphics_preset = uint32_t(next + 1);
+                ApplyGraphicsPreset(o.graphics_preset, s, o);
+            }
+            uint32_t p = std::min<uint32_t>(o.graphics_preset, 6u);
+            std::snprintf(text, sizeof(text), "%s", kGraphicsPresetNames[p]);
+            return true;
+        }
         case kRenderResolution: {
-            // 20% to 200% in steps of 5; greyed while the dynamic resolution has it, which it shows as it is now
-            if (step) s.render_percent = uint32_t(StepRange(int(s.render_percent), 20, 200, 5, step));
+            // 15% to 200% in steps of 5; greyed while the dynamic resolution has it, which it shows as it is now
+            if (step) s.render_percent = uint32_t(StepRange(int(s.render_percent), 15, 200, 5, step));
             PercentText(o.dynamic_resolution ? dynres::Percent() : s.render_percent, text);
             return true;
         }
@@ -445,8 +583,8 @@ bool StepDisplayRow(int id, int step, Settings& s, char (&text)[64]) {
             std::snprintf(text, sizeof(text), "%u FPS", kDynamicTargets[StepTable(kDynamicTargets, o.dynamic_target_fps, step)]);
             return true;
         case kDynamicMin:
-            // 20% up to the max, the max down to the min
-            if (step) o.dynamic_min_percent = uint32_t(StepRange(int(o.dynamic_min_percent), 20, int(o.dynamic_max_percent), 5, step));
+            // 15% up to the max, the max down to the min
+            if (step) o.dynamic_min_percent = uint32_t(StepRange(int(o.dynamic_min_percent), 15, int(o.dynamic_max_percent), 5, step));
             PercentText(o.dynamic_min_percent, text);
             return true;
         case kDynamicMax:
@@ -468,6 +606,10 @@ bool StepDisplayRow(int id, int step, Settings& s, char (&text)[64]) {
         case kScreenFilter:
             std::snprintf(text, sizeof(text), "%s",
                           kScreenFilterNames[StepTable(kScreenFilters, o.screen_filter, step)]);
+            return true;
+        case kWeaponSkin:
+            std::snprintf(text, sizeof(text), "%s",
+                          kWeaponSkinNames[StepTable(kWeaponSkins, o.weapon_skin, step)]);
             return true;
         case kFov:
             if (step) o.fov = uint32_t(StepRange(int(o.fov), kFovMin, kFovMax, 1, step));
@@ -648,6 +790,7 @@ std::string RowText(int id, int step, Settings& s = Get()) {
                !StepCheatRow(id, step, text)) {
         StepInputRow(id, step, text);
     }
+    if (step && IsPresetControlledRow(id)) game::Opt().graphics_preset = 0;
     if (step && &s == &Get()) Changed();
     return text;
 }

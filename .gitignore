@@ -2,6 +2,7 @@
 /out/
 /build/
 *.zip
+*.apk
 *.pdb
 *.exe
 *.obj

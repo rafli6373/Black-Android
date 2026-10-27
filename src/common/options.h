@@ -14,10 +14,12 @@ inline constexpr const char* kLanguages[] = {"int", "fra", "deu", "ita", "esp", 
 struct Options {
     bool skip_intros = false;  // logos at boot and the film after pressing start
     bool fps_counter = false;
+    uint32_t graphics_preset = 0;  // 0 custom, 1 auto (recommended), 2 low, 3 medium, 4 high, 5 ultra, 6 esports
     uint32_t fmv_scale = 0;  // 4:3 films on a wider screen: 0 fill it, top and bottom cut; 1 kept 4:3
     // a look over the frame: 0 none, 1 and 2 a CRT (light, strong), 3 sharpen, 4 vibrant, 5 noir, 6 sepia,
-    // 7 night vision, 8 VHS
+    // 7 night vision, 8 VHS, 9 cinematic, 10 thermal, 11 cyberpunk
     uint32_t screen_filter = 0;
+    uint32_t weapon_skin = 0;  // first-person weapon camo: 0 off, 1 gold, 2 diamond, 3 damascus, 4 dark matter, 5 magma, 6 cyber neon, 7 jade
     bool reload_blur = true;
     bool bloom = true;  // the glow added over bright parts of the frame (native/vulkan.cpp)
     bool fog = true;

@@ -9,6 +9,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -199,10 +200,100 @@ float4 pscolor(O i) : SV_Target {
         c.b = Fetch(uv - float2(off, 0)).b;
         c = lerp(Luma(c), c, 0.8) * 0.95 + 0.03;
         c += (Noise(i.p.xy + frac(t) * 173) - 0.5) * 0.06;
+    } else if (mode == 5) {  // cinematic: blockbuster teal shadows and warm orange highlights
+        float l = Luma(c);
+        float3 shadows = float3(0.04, 0.22, 0.30);
+        float3 highlights = float3(1.05, 0.86, 0.68);
+        float3 grade = lerp(shadows, highlights, smoothstep(0.05, 0.95, l));
+        c = lerp(c, c * grade * 1.25, 0.45);
+        c = saturate((c - 0.5) * 1.15 + 0.5) * Corners(uv, 0.25);
+    } else if (mode == 6) {  // thermal: tactical FLIR infrared heat vision
+        float h = saturate(pow(saturate(Luma(c)), 0.85) * 1.15);
+        float3 cold = lerp(float3(0.03, 0.02, 0.18), float3(0.48, 0.05, 0.58), saturate(h * 2.5));
+        float3 warm = lerp(float3(0.95, 0.22, 0.05), float3(1.0, 0.92, 0.25), saturate((h - 0.4) * 2.2));
+        c = lerp(cold, warm, smoothstep(0.32, 0.72, h));
+        c = lerp(c, float3(1.0, 1.0, 1.0), smoothstep(0.82, 0.98, h));
+        c *= 1.0 - 0.08 * fmod(floor(i.p.y), 2.0);
+        c *= Corners(uv, 0.35);
+    } else if (mode == 7) {  // cyberpunk: neon cyan and magenta split tone
+        float l = Luma(c);
+        c = lerp(float3(l, l, l), c, 1.45);
+        float3 neon = lerp(float3(0.28, 0.04, 0.42), float3(0.10, 0.95, 1.0), smoothstep(0.15, 0.88, l));
+        c = lerp(c, c * neon * 1.35 + float3(0.18, 0.0, 0.14) * (1.0 - l), 0.42);
+        c = saturate((c - 0.5) * 1.14 + 0.5) * Corners(uv, 0.22);
     }
     return float4(saturate(c), 1);
 }
 )";
+
+// COD Mobile-inspired procedural weapon skins applied on first-person weapon draws (ext.x = skin id, ext.y = seconds)
+struct WeaponSkinHooks final : ShaderHooks {
+    std::string Output() const override {
+        return R"(
+    if (ext.x > 0.5) {
+        int skin = (int)(ext.x + 0.5);
+        float t = ext.y;
+        float luma = dot(outc.rgb, float3(0.299, 0.587, 0.114));
+        float flesh = saturate((outc.r - outc.g * 1.15) * 8.0) * saturate((outc.g - outc.b * 1.10) * 8.0);
+        float mask = (1.0 - flesh) * smoothstep(0.02, 0.08, luma);
+        float shade = clamp(luma * 1.65, 0.18, 1.35);
+        float spec = pow(saturate(luma * 1.15), 3.0);
+        float2 uv = pin.tc0.xy * 6.0 + pin.pos.xy * 0.0025;
+        float w1 = sin(uv.x * 14.0 + sin(uv.y * 11.0 + t * 0.8) * 2.5);
+        float w2 = cos(uv.y * 16.0 - sin(uv.x * 13.0 - t * 0.6) * 2.5);
+        float pat = saturate(w1 * w2 * 0.5 + 0.5);
+        float3 camo = outc.rgb;
+        if (skin == 1) {
+            float etch = smoothstep(0.42, 0.58, abs(sin(uv.x * 18.0 + sin(uv.y * 14.0) * 3.0)));
+            float sweep = pow(saturate(sin(uv.x * 2.5 + uv.y * 1.5 - t * 2.2) * 0.5 + 0.5), 6.0);
+            float3 base_gold = lerp(float3(0.55, 0.36, 0.06), float3(1.0, 0.80, 0.24), etch);
+            camo = base_gold * shade + float3(1.0, 0.94, 0.72) * (spec * 0.65 + sweep * 0.25);
+        } else if (skin == 2) {
+            float2 cell = frac(uv * 18.0) - 0.5;
+            float2 id = floor(uv * 18.0);
+            float h = frac(sin(dot(id, float2(12.9898, 78.233))) * 43758.5453);
+            float facet = saturate(1.0 - dot(cell, cell) * 5.5);
+            float glint = pow(saturate(sin(h * 6.283 + t * 3.5 + luma * 8.0) * 0.5 + 0.5), 5.0);
+            float3 crystal = lerp(float3(0.72, 0.86, 1.0), float3(1.0, 1.0, 1.0), facet) * (0.65 + glint * 0.75);
+            float3 gold_trim = float3(0.95, 0.75, 0.22) * shade;
+            camo = lerp(gold_trim, crystal * shade, smoothstep(0.18, 0.45, facet)) + spec * 0.45;
+        } else if (skin == 3) {
+            float wave = abs(sin(uv.x * 16.0 + sin(uv.y * 12.0) * 3.2 + cos((uv.x + uv.y) * 9.0) * 2.0));
+            float vein = smoothstep(0.72, 0.88, wave);
+            float3 steel = lerp(float3(0.06, 0.14, 0.38), float3(0.16, 0.34, 0.68), wave);
+            float3 ruby = float3(0.88, 0.10, 0.32);
+            camo = lerp(steel, ruby, vein) * shade + float3(0.55, 0.75, 1.0) * spec * 0.45;
+        } else if (skin == 4) {
+            float plasma = sin(uv.x * 10.0 + t * 2.0 + sin(uv.y * 9.0 - t * 1.6) * 2.8) * 0.5 + 0.5;
+            float core = pow(plasma, 3.0);
+            float3 void_col = lerp(float3(0.12, 0.02, 0.26), float3(0.68, 0.08, 0.96), plasma);
+            float3 hot_col = float3(1.0, 0.45, 0.98) * core * 0.65;
+            camo = void_col * shade + hot_col + float3(0.85, 0.55, 1.0) * spec * 0.35;
+        } else if (skin == 5) {
+            float crack = pow(saturate(1.0 - abs(sin(uv.x * 11.0 + sin(uv.y * 10.0 + t * 1.4) * 2.6))), 4.0);
+            float pulse = 0.75 + 0.25 * sin(t * 3.0 + uv.x * 4.0);
+            float3 rock = float3(0.11, 0.09, 0.09) * shade;
+            float3 lava = lerp(float3(1.0, 0.22, 0.02), float3(1.0, 0.88, 0.20), crack) * crack * pulse * 1.45;
+            camo = rock + lava + float3(1.0, 0.55, 0.15) * spec * 0.30;
+        } else if (skin == 6) {
+            float2 grid = abs(frac(uv * 5.0) - 0.5);
+            float line_mask = smoothstep(0.42, 0.48, max(grid.x, grid.y));
+            float scan = pow(saturate(sin(uv.x * 3.0 + uv.y * 2.0 - t * 2.8) * 0.5 + 0.5), 4.0);
+            float3 neon = lerp(float3(0.0, 0.95, 1.0), float3(1.0, 0.08, 0.72), pat);
+            float3 carbon = float3(0.08, 0.10, 0.14) * shade;
+            camo = carbon + neon * (line_mask * (0.45 + 0.55 * scan) + spec * 0.45);
+        } else if (skin == 7) {
+            float jade_w = sin(uv.x * 12.0 + sin(uv.y * 10.0 + t * 1.1) * 2.4) * 0.5 + 0.5;
+            float gold_v = smoothstep(0.82, 0.94, jade_w);
+            float3 jade = lerp(float3(0.03, 0.32, 0.16), float3(0.16, 0.88, 0.48), jade_w) * shade;
+            camo = lerp(jade, float3(1.0, 0.84, 0.28) * shade, gold_v) + float3(0.55, 1.0, 0.75) * spec * 0.45;
+        }
+        outc.rgb = lerp(outc.rgb, saturate(camo), mask);
+    }
+)";
+    }
+};
+const WeaponSkinHooks kWeaponSkinHooks;
 
 const char* kDepthHlsl = R"(
 Texture2D<float> img : register(t0);
@@ -1006,6 +1097,7 @@ public:
         ramp_dirty_ = true;
     }
     void WaitGpuFrame(uint64_t n);
+    const char* DeviceName() const { return props_.deviceName; }
 
 private:
     struct Frame {
@@ -1244,6 +1336,7 @@ private:
 bool VulkanBackend::Init(uint32_t width, uint32_t height) {
     guest_w_ = width;
     guest_h_ = height;
+    g_shader_hooks = &kWeaponSkinHooks;
     vkshader::Init(app::ExeDir() / "shadercache");
     if (!CreateInstance() || !CreateSurface() || !PickDevice() || !CreateDevice()) return false;
     alloc_.Init(pd_, dev_);
@@ -2876,7 +2969,14 @@ void VulkanBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t
         FillTransformConstants(s, size, c);
         FillLightConstants(s, sh.fk, c);
     }
+    bool gun_draw = s.vsc[58][3] > 0.5f;
+    if (gun_draw && game::Opt().weapon_skin && !SimpleState(s, kMBlendEnable)) {
+        using clock = std::chrono::steady_clock;
+        c.ext[0] = float(game::Opt().weapon_skin);
+        c.ext[1] = std::fmod(std::chrono::duration<float>(clock::now().time_since_epoch()).count(), 1000.0f);
+    }
     Alloc vc = Constants(s.vsc.data(), sizeof(s.vsc));
+    if (gun_draw && vc.cpu) reinterpret_cast<float*>(vc.cpu)[58 * 4 + 3] = 0.0f;
     Alloc dc = Constants(&c, sizeof(c));
     VkBuffer vbufs[16];
     VkDeviceSize voffs[16];
@@ -3168,7 +3268,7 @@ void VulkanBackend::DrawFrame(Target* t, uint32_t index) {
     float aspect = game::Aspect();
     float w = float(swap_extent_.width), h = float(swap_extent_.height);
     float vw = std::min(w, h * aspect), vh = vw / aspect;
-    uint32_t filter = std::min(game::Opt().screen_filter, 8u);
+    uint32_t filter = std::min(game::Opt().screen_filter, 11u);
     uint32_t crt = filter <= 2 ? filter : 0;
     bool fxaa = game::Opt().anti_aliasing == 1, ssaa = game::Opt().anti_aliasing == 2;
     bool post = game::Opt().hdr || fxaa;
@@ -3412,6 +3512,64 @@ std::unique_ptr<Backend> CreateBackend() {
 
 void WaitGpuFrame(uint64_t n) {
     if (g_vulkan) g_vulkan->WaitGpuFrame(n);
+}
+
+// classifies the phone's Vulkan GPU and system RAM into a preset tier: 2 LOW, 3 MEDIUM, 4 HIGH, 5 ULTRA
+uint32_t RecommendedPreset(std::string* short_gpu_out = nullptr) {
+    std::string up = g_vulkan ? g_vulkan->DeviceName() : "";
+    for (char& ch : up) ch = char(std::toupper(uint8_t(ch)));
+    auto number_after = [&](const char* key) -> int {
+        size_t p = up.find(key);
+        if (p == std::string::npos) return 0;
+        p += std::strlen(key);
+        while (p < up.size() && !std::isdigit(uint8_t(up[p]))) p++;
+        int v = 0;
+        while (p < up.size() && std::isdigit(uint8_t(up[p]))) v = v * 10 + (up[p++] - '0');
+        return v;
+    };
+    std::string tag = "GPU";
+    uint32_t tier = 3;
+    int ram_gb = std::max(1, (SDL_GetSystemRAM() + 512) / 1024);
+    if (up.find("IMMORTALIS") != std::string::npos) {
+        int m = number_after("IMMORTALIS");
+        tag = m ? "IMMORTALIS " + std::to_string(m) : "IMMORTALIS";
+        tier = 5;
+    } else if (up.find("ADRENO") != std::string::npos) {
+        int m = number_after("ADRENO");
+        tag = m ? "ADRENO " + std::to_string(m) : "ADRENO";
+        if (m >= 750) tier = 5;
+        else if (m >= 730 || (m >= 650 && m < 700)) tier = 4;
+        else if (m >= 710 || (m >= 630 && m < 650)) tier = 3;
+        else tier = 2;
+    } else if (up.find("MALI") != std::string::npos) {
+        int m = number_after("MALI");
+        tag = m ? "MALI-G" + std::to_string(m) : "MALI";
+        if (m >= 720) tier = 5;
+        else if (m >= 710 || (m >= 78 && m < 100)) tier = 4;
+        else if ((m >= 68 && m < 100) || (m >= 610 && m < 710)) tier = 3;
+        else tier = 2;
+    } else if (up.find("XCLIPSE") != std::string::npos) {
+        int m = number_after("XCLIPSE");
+        tag = m ? "XCLIPSE " + std::to_string(m) : "XCLIPSE";
+        tier = m >= 940 ? 5 : 4;
+    } else if (up.find("POWERVR") != std::string::npos) {
+        tag = "POWERVR";
+        tier = 2;
+    } else {
+        tier = ram_gb >= 12 ? 5 : ram_gb >= 8 ? 4 : ram_gb >= 6 ? 3 : 2;
+    }
+    if (ram_gb <= 3) tier = 2;
+    else if (ram_gb <= 4) tier = std::min(tier, 3u);
+    else if (ram_gb <= 6) tier = std::min(tier, 4u);
+    if (short_gpu_out) *short_gpu_out = tag + " " + std::to_string(ram_gb) + "GB";
+    return tier;
+}
+
+std::string DeviceRecommendation() {
+    std::string hw;
+    uint32_t tier = RecommendedPreset(&hw);
+    const char* name = tier >= 5 ? "ULTRA" : tier == 4 ? "HIGH" : tier == 3 ? "MEDIUM" : "LOW";
+    return std::string(name) + " (" + hw + ")";
 }
 
 }  // namespace gpu

@@ -204,6 +204,7 @@ float ZScale(const gpu::Surface& zs) {
 }
 
 float g_view_scale = 1.0f;
+bool g_gun_draw = false;
 
 // c-38 and c-37 hold the viewport scale and offset, as D3D_GetViewportOffsetAndScale computes them
 constexpr uint32_t kViewportScale = 58;
@@ -214,7 +215,7 @@ void UpdateViewportConstants() {
     g_state.zscale = ZScale(g_state.zs);
     float hw = v.w * 0.5f;
     float hh = v.h * 0.5f;
-    g_state.vsc[kViewportScale] = {hw * g_view_scale, -hh * g_view_scale, (v.max_z - v.min_z) * g_state.zscale, 0};
+    g_state.vsc[kViewportScale] = {hw * g_view_scale, -hh * g_view_scale, (v.max_z - v.min_z) * g_state.zscale, g_gun_draw ? 1.0f : 0.0f};
     float x = v.x + g_state.ss_offset_x + hw;
     float y = v.y + g_state.ss_offset_y + hh;
     g_state.vsc[kViewportOffset] = {x, y, v.min_z * g_state.zscale, 0};
@@ -244,6 +245,12 @@ std::recursive_mutex& Lock() { return g_lock; }
 void ViewScale(float xy) {
     std::lock_guard<std::recursive_mutex> lock(g_lock);
     g_view_scale = xy;
+    UpdateViewportConstants();
+}
+
+void GunDraw(bool on) {
+    std::lock_guard<std::recursive_mutex> lock(g_lock);
+    g_gun_draw = on;
     UpdateViewportConstants();
 }
 

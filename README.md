@@ -4,6 +4,7 @@ An unofficial native Android port of the original Xbox version of *Black*, with 
 The game's x86 code is statically recompiled ahead of time to C++ with [XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp), then built for arm64. Drawing goes through Vulkan, and windowing, input and audio through SDL3. No emulator is involved.
 
 > [!NOTE]
+> **Open-Source Attribution:** This repository is a custom build and modification fork maintained by **[rafli6373](https://github.com/rafli6373)**, based on the original **[Black-Android](https://github.com/RanggaCasper/Black-Android)** port created by **[Rangga Casper](https://github.com/RanggaCasper)**.
 > This project does not include any game assets. You must provide the files from your own legally acquired copy of the game to install or build.
 
 <p align="center">
@@ -74,11 +75,11 @@ The settings are in the game's own options menu, each page under its own button:
 - **Storage**: 2 GB for the game files and saves.
 
 ## Building
-Building requires a Windows PC.
+Building can be done via **GitHub Actions** (recommended, using the **Build APK** workflow tab) or locally on a Windows PC.
 
 ### 1. Clone the repository
 ```
-git clone https://github.com/RanggaCasper/Black-Android.git
+git clone https://github.com/rafli6373/Black-Android.git
 ```
 
 ### 2. Add the game files
@@ -98,9 +99,13 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
 ## Credits
-- [XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp) by TGP482: the static recompiler and the portable runtime (Xbox kernel, XDK libraries and Direct3D 8) this port is built on.
+- **[Rangga Casper](https://github.com/RanggaCasper)** ([Black-Android](https://github.com/RanggaCasper/Black-Android)): original creator and author of the Android port (Vulkan backend, SDL3 integration, touch controls, gyroscope, in-game menus, and DirectSound/Direct3D 8 implementation).
+- **[XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp)** by **TGP482**: the static recompiler and the portable runtime (Xbox kernel, XDK libraries and Direct3D 8) this port is built on.
+- **[rafli6373](https://github.com/rafli6373)**: fork maintainer, CI/CD build automation & custom modifications.
+- **[datfooldive](https://github.com/datfooldive)**: any weapon in any level contribution.
+- **[bagasromadon](https://github.com/bagasromadon)**: the touch controls' button skin.
+- **Zukiru**: HDR shader contribution.
 - [SDL](https://github.com/libsdl-org/SDL), [glslang](https://github.com/KhronosGroup/glslang), [toml++](https://github.com/marzer/tomlplusplus) and [Dear ImGui](https://github.com/ocornut/imgui).
-- [bagasromadon](https://github.com/bagasromadon): the touch controls' button skin.
 - [xemu](https://github.com/xemu-project/xemu) and [Cxbx-Reloaded](https://github.com/Cxbx-Reloaded/Cxbx-Reloaded), which XboxXBE-Recomp used as references for Xbox hardware and API behavior.
 
 *Black* is a trademark of its respective owners. This project is not affiliated with or endorsed by them.

@@ -18,6 +18,7 @@ using namespace layout;
 
 namespace d3d {
 void ViewScale(float xy);
+void GunDraw(bool on);
 }
 
 namespace game {
@@ -208,10 +209,16 @@ void FieldOfView(X86Context& ctx, uint8_t*) {
 X86_EXTERN_FUNC(__imp__sub_00176F60);
 X86_FUNC(sub_00176F60) {
     if (ctx.esi == R32(kDisplay) + kDisplayDrawLists + kAlphaDrawList * kDrawListSize) game::EspCamera();
-    bool gun = g_gun != 1 && ctx.esi == R32(kDisplay) + kDisplayDrawLists + kGunDrawList * kDrawListSize;
-    if (gun) d3d::ViewScale(g_gun);
+    bool gun = ctx.esi == R32(kDisplay) + kDisplayDrawLists + kGunDrawList * kDrawListSize;
+    if (gun) {
+        d3d::GunDraw(true);
+        if (g_gun != 1) d3d::ViewScale(g_gun);
+    }
     __imp__sub_00176F60(ctx, base);
-    if (gun) d3d::ViewScale(1);
+    if (gun) {
+        if (g_gun != 1) d3d::ViewScale(1);
+        d3d::GunDraw(false);
+    }
 }
 
 // What sits on the gun follows its picture: across the player's view a point or an axis grows by the same share,
