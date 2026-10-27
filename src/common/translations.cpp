@@ -177,7 +177,13 @@ constexpr Entry kEntries[] = {
     {"FLOATING", {u"Flottant", u"Schwebend", u"Mobile", u"Flotante", u"Mengambang"}},
     {"FIXED", {u"Fixe", u"Fest", u"Fisso", u"Fijo", u"Tetap"}},
     {"CUSTOM", {{}, {}, {}, {}, u"Kustom"}},
+    {"XBOX / PS2 PAD", {u"Manette Xbox / PS2", u"Xbox / PS2-Pad", u"Pad Xbox / PS2", u"Mando Xbox / PS2", u"Stik Xbox / PS2"}},
+    {"PS2 + XBOX", {u"PS2 + Xbox", u"PS2 + Xbox", u"PS2 + Xbox", u"PS2 + Xbox", u"PS2 + Xbox"}},
+    {"PS2", {u"PS2", u"PS2", u"PS2", u"PS2", u"PS2"}},
+    {"XBOX PAD", {u"Manette Xbox", u"Xbox-Pad", u"Pad Xbox", u"Mando Xbox", u"Stik Xbox"}},
+    {"XBOX ICON", {u"IcÃ´ne Xbox", u"Xbox-Symbol", u"Icona Xbox", u"Icono Xbox", u"Ikon Xbox"}},
     {"DEFAULT", {{}, {}, {}, {}, u"Bawaan"}},
+    {"2 FINGER", {{}, {}, {}, {}, u"2 jari"}},
     {"3 FINGER", {{}, {}, {}, {}, u"3 jari"}},
     {"4 FINGER", {{}, {}, {}, {}, u"4 jari"}},
 

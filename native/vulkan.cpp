@@ -230,6 +230,7 @@ float4 pscolor(O i) : SV_Target {
 struct WeaponSkinHooks final : ShaderHooks {
     std::string Output() const override {
         return R"(
+    outc.rgb = saturate(outc.rgb);
     if (ext.x > 0.5) {
         int skin = (int)(ext.x + 0.5);
         float t = ext.y;
@@ -238,7 +239,7 @@ struct WeaponSkinHooks final : ShaderHooks {
         float mask = (1.0 - flesh) * smoothstep(0.02, 0.08, luma);
         float shade = clamp(luma * 1.65, 0.18, 1.35);
         float spec = pow(saturate(luma * 1.15), 3.0);
-        float2 uv = pin.tc0.xy * 6.0 + pin.pos.xy * 0.0025;
+        float2 uv = tc0.xy * 6.0 + i.pos.xy * 0.0025;
         float w1 = sin(uv.x * 14.0 + sin(uv.y * 11.0 + t * 0.8) * 2.5);
         float w2 = cos(uv.y * 16.0 - sin(uv.x * 13.0 - t * 0.6) * 2.5);
         float pat = saturate(w1 * w2 * 0.5 + 0.5);

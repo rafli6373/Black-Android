@@ -608,13 +608,46 @@ constexpr Layout kFourFinger = {{
     {0.655f, 0.38f, 0.045f},
     {0.13f, 0.72f, 0.12f},
 }};
+// authentic PS2 DualShock 2 / Xbox controller layout:
+// Left: L2/LT + L1 bumpers on top, D-Pad cross (Up/Down/Left/Right) mid-left, Left Analog Stick + L3 bottom-left
+// Center: Gyro, SELECT/BACK, START, Settings Panel at top
+// Right: R2/LT + R1/RT triggers on top, Diamond Face Buttons (Triangle/Y top, Circle/B right, Cross/A bottom, Square/X left)
+constexpr Layout kConsolePad = {{
+    {0.92f, 0.27f, 0.064f},  // 0: fire (R1 / RT)
+    {0.185f, 0.17f, 0.052f}, // 1: fire_left (L1 / LB)
+    {0.80f, 0.27f, 0.056f},  // 2: aim (R2 / LT)
+    {0.115f, 0.36f, 0.043f}, // 3: mode (D-Pad Up)
+    {0.93f, 0.65f, 0.052f},  // 4: melee (Circle / B - Right of diamond)
+    {0.77f, 0.65f, 0.052f},  // 5: use (Square / X - Left of diamond)
+    {0.075f, 0.17f, 0.052f}, // 6: grenade (L2 / LT)
+    {0.85f, 0.79f, 0.052f},  // 7: reload (Cross / A - Bottom of diamond)
+    {0.06f, 0.88f, 0.045f},  // 8: crouch (L3)
+    {0.172f, 0.46f, 0.043f}, // 9: weapon (D-Pad Right)
+    {0.115f, 0.56f, 0.043f}, // 10: health (D-Pad Down)
+    {0.45f, 0.08f, 0.040f},  // 11: map (SELECT / BACK)
+    {0.55f, 0.08f, 0.040f},  // 12: pause (START)
+    {0.35f, 0.08f, 0.038f},  // 13: gyro (GYRO)
+    {0.036f, 0.08f, 0.045f}, // 14: back (Menus only in mobile layouts)
+    {0.85f, 0.51f, 0.052f},  // 15: suppressor (Triangle / Y - Top of diamond)
+    {0.11f, 0.60f, 0.048f},  // 16: dpad_up (Menus only in mobile layouts)
+    {0.11f, 0.80f, 0.048f},  // 17: dpad_down (Menus only in mobile layouts)
+    {0.058f, 0.46f, 0.043f}, // 18: dpad_left (D-Pad Left)
+    {0.156f, 0.70f, 0.048f}, // 19: dpad_right (Menus only in mobile layouts)
+    {0.65f, 0.08f, 0.038f},  // 20: panel (Settings / Cheats / Skins)
+    {0.92f, 0.78f, 0.07f},   // 21: enter (Menus only in mobile layouts)
+    {0.68f, 0.27f, 0.045f},  // 22: zoom (Scope Zoom X2/X5)
+    {0.165f, 0.79f, 0.108f}, // 23: kStick (Left Analog Stick)
+}};
 struct Preset {
     const char* id;
     const char* label;
     const Layout* places;
 };
 constexpr Preset kPresets[] = {
-    {"default", "DEFAULT", &kTwoFinger}, {"three", "3 FINGER", &kThreeFinger}, {"four", "4 FINGER", &kFourFinger}};
+    {"console", "XBOX / PS2 PAD", &kConsolePad},
+    {"default", "2 FINGER", &kTwoFinger},
+    {"three", "3 FINGER", &kThreeFinger},
+    {"four", "4 FINGER", &kFourFinger}};
 
 constexpr float kStickZone = 0.42f;    // share of the width from the left a touch takes the stick in
 constexpr float kLookCounts = 1800.0f;  // mouse counts a swipe across the screen's width turns: 90 degrees
@@ -651,23 +684,22 @@ std::atomic<uint64_t> g_touch_ms{0};
 std::atomic<uint64_t> g_back_until{0};  // the back key's tap of Start or B lasts until then
 constexpr uint64_t kBackTapMs = 120;
 
-// the buttons' look: drawn as before, or the images of the skin bagasromadon made (issue #14), with the Xbox
-// controller's letters or without
-enum Skin : uint32_t { kClassic, kXbox, kClean, kSkins };
-constexpr const char* kSkinIds[] = {"classic", "xbox", "clean"};
-constexpr const char* kSkinNames[] = {"CLASSIC", "XBOX", "CLEAN"};
+// the buttons' look: authentic PS2 DualShock 2 + Xbox controller buttons, or the mobile FPS skins
+enum Skin : uint32_t { kPs2Xbox, kPs2, kXboxPad, kXbox, kClassic, kClean, kSkins };
+constexpr const char* kSkinIds[] = {"ps2_xbox", "ps2", "xbox_pad", "xbox", "classic", "clean"};
+constexpr const char* kSkinNames[] = {"PS2 + XBOX", "PS2", "XBOX PAD", "XBOX ICON", "CLASSIC", "CLEAN"};
 
 // the layout in use, under g_lock
-Layout g_layout = kTwoFinger;
-uint32_t g_skin = kXbox;
+Layout g_layout = kConsolePad;
+uint32_t g_skin = kPs2Xbox;
 size_t g_preset = 0;
-float g_opacity = 0.85f;
+float g_opacity = 0.88f;
 float g_scale = 1.0f;  // every control's size, on top of its own
 bool g_fixed_stick = false;  // the stick stays in its place, else it comes down under the thumb
 bool g_loaded = false;
 // the editor: the layout before it opened (for Cancel), the control picked
 std::atomic<bool> g_editing{false};
-Layout g_before = kTwoFinger;
+Layout g_before = kConsolePad;
 float g_before_opacity = 0.85f;
 size_t g_before_preset = 0;
 int g_selected = -1;
@@ -685,31 +717,37 @@ float Height() {
 
 std::filesystem::path LayoutFile() { return app::ExeDir() / "layout.toml"; }
 
+bool ConsoleSkin() { return g_skin == kPs2Xbox || g_skin == kPs2 || g_skin == kXboxPad; }
+bool ConsoleMode() { return g_preset == 0 || ConsoleSkin(); }
+
 void LoadLayout() {
     g_loaded = true;
     try {
         toml::table t = toml::parse_file(LayoutFile().string());
-        std::string preset = t["preset"].value_or(std::string("default"));
+        bool has_v2 = t.contains("preset_v2");
+        std::string preset = t["preset_v2"].value_or(std::string("console"));
         for (size_t i = 0; i < std::size(kPresets); i++)
             if (preset == kPresets[i].id) g_preset = i;
         g_layout = *kPresets[g_preset].places;
         g_opacity = std::clamp(float(t["opacity"].value_or(double(g_opacity))), 0.2f, 1.0f);
         g_scale = std::clamp(float(t["scale"].value_or(double(g_scale))), 0.5f, 1.5f);
-        std::string skin = t["skin"].value_or(std::string(kSkinIds[g_skin]));
+        std::string skin = t["skin_v2"].value_or(std::string(kSkinIds[g_skin]));
         for (uint32_t i = 0; i < kSkins; i++)
             if (skin == kSkinIds[i]) g_skin = i;
         g_fixed_stick = t["stick"].value_or(std::string("floating")) == "fixed";
-        for (size_t i = 0; i <= kButtonCount; i++) {
-            // the menus' controls are not in the editor: always the preset's
-            if (i != kStick && kButtons[i].when == When::Menus) continue;
-            const char* id = i == kStick ? "stick" : kButtons[i].id;
-            const toml::table* p = t["controls"][id].as_table();
-            if (!p) continue;
-            Place& pl = g_layout[i];
-            pl.x = std::clamp(float((*p)["x"].value_or(double(pl.x))), 0.0f, 1.0f);
-            pl.y = std::clamp(float((*p)["y"].value_or(double(pl.y))), 0.0f, 1.0f);
-            pl.r = std::clamp(float((*p)["r"].value_or(double(pl.r))), 0.02f, 0.25f);
-            pl.hidden = (*p)["hidden"].value_or(false) && i != kStick && !kButtons[i].keep;
+        if (has_v2) {
+            for (size_t i = 0; i <= kButtonCount; i++) {
+                // the menus' controls are not in the editor except dpad_left (18) which completes the console D-Pad cross
+                if (i != kStick && i != 18 && kButtons[i].when == When::Menus) continue;
+                const char* id = i == kStick ? "stick" : kButtons[i].id;
+                const toml::table* p = t["controls"][id].as_table();
+                if (!p) continue;
+                Place& pl = g_layout[i];
+                pl.x = std::clamp(float((*p)["x"].value_or(double(pl.x))), 0.0f, 1.0f);
+                pl.y = std::clamp(float((*p)["y"].value_or(double(pl.y))), 0.0f, 1.0f);
+                pl.r = std::clamp(float((*p)["r"].value_or(double(pl.r))), 0.02f, 0.25f);
+                pl.hidden = (*p)["hidden"].value_or(false) && i != kStick && !kButtons[i].keep;
+            }
         }
     } catch (...) {
     }
@@ -722,8 +760,8 @@ void SaveLayout() {
         controls.insert(i == kStick ? "stick" : kButtons[i].id,
                         toml::table{{"x", double(p.x)}, {"y", double(p.y)}, {"r", double(p.r)}, {"hidden", p.hidden}});
     }
-    toml::table t{{"preset", kPresets[g_preset].id}, {"opacity", double(g_opacity)}, {"scale", double(g_scale)},
-                  {"skin", kSkinIds[g_skin]}, {"stick", g_fixed_stick ? "fixed" : "floating"}, {"controls", controls}};
+    toml::table t{{"preset_v2", kPresets[g_preset].id}, {"opacity", double(g_opacity)}, {"scale", double(g_scale)},
+                  {"skin_v2", kSkinIds[g_skin]}, {"stick", g_fixed_stick ? "fixed" : "floating"}, {"controls", controls}};
     std::ofstream(LayoutFile()) << t << "\n";
 }
 
@@ -743,6 +781,16 @@ bool InMenus() { return input::g_menu; }
 
 bool ButtonShown(size_t i) {
     const Button& b = kButtons[i];
+    if (ConsoleMode()) {
+        // In Xbox/PS2 console pad mode, show the full console controller both in Menus and in Gameplay:
+        // dpad_left (18) completes the D-Pad cross with mode (Up), health (Down), and weapon (Right);
+        // the other menu-only duplicates (back, dpad_up, dpad_down, dpad_right, enter) are replaced by the pad buttons.
+        if (b.when == When::Menus && i != 18) return false;
+        if (g_editing) return true;
+        if (g_layout[i].hidden) return false;
+        if (i == kZoomButton && !(game::g_zoom < kScoped)) return false;
+        return true;
+    }
     if (g_editing) return b.when != When::Menus;
     if (g_layout[i].hidden) return false;
     if (i == kZoomButton && !(game::g_zoom < kScoped)) return false;
@@ -856,7 +904,7 @@ bool DpadStep(uint64_t held) {
     return held >= kRepeatAfterMs && (held - kRepeatAfterMs) % kRepeatMs < kStepMs / 2;
 }
 
-bool Dpad(size_t i) { return kButtons[i].press >= kBit && kButtons[i].press < kBit + 4 && kButtons[i].when == When::Menus; }
+bool Dpad(size_t i) { return kButtons[i].press >= kBit && kButtons[i].press < kBit + 4 && (InMenus() || kButtons[i].when == When::Menus); }
 
 void Recount() {
     std::fill(std::begin(g_pressed), std::end(g_pressed), false);
@@ -938,6 +986,11 @@ void FingerDown(SDL_FingerID id, float x, float y) {
         f.down_ms = NowMs();
         if (kButtons[b].press == kPanel) app::ToggleMenu();
         if (kButtons[b].press == kGyro) gyro::NextMode();
+    } else if (ConsoleMode() && InStick(x, y)) {
+        f.role = Role::Stick;
+        f.x0 = g_layout[kStick].x * Width();
+        f.y0 = g_layout[kStick].y * Height();
+        UpdateStick(f);
     } else if (InMenus()) {
         // not the cursor yet: a tap clicks where it lifts, a swipe scrolls without moving the cursor
         f.role = Role::Cursor;
@@ -1400,8 +1453,8 @@ SkinPart PartOf(Icon icon) {
     }
 }
 
-// the skin's images in use: not CLASSIC, and the atlas loaded
-bool Skinned() { return g_skin != kClassic && g_skin_texture; }
+// the skin's images in use: only for kXbox ("XBOX ICON") and kClean ("CLEAN"), when the atlas is loaded
+bool Skinned() { return (g_skin == kXbox || g_skin == kClean) && g_skin_texture; }
 
 // a part of the skin in use, its circle of radius r about c
 void SkinImage(ImDrawList* dl, SkinPart part, ImVec2 c, float r, ImU32 tint) {
@@ -1410,6 +1463,12 @@ void SkinImage(ImDrawList* dl, SkinPart part, ImVec2 c, float r, ImU32 tint) {
     float top = c.y + r - 2 * r * kSkinCellH / kSkinCellW;
     dl->AddImage(g_skin_texture, ImVec2(c.x - r, top), ImVec2(c.x + r, c.y + r), ImVec2(u / g_skin_w, v / g_skin_h),
                  ImVec2((u + kSkinCellW) / g_skin_w, (v + kSkinCellH) / g_skin_h), tint);
+}
+
+// a text centred on a point, its height a share of the screen's
+void CentredText(ImDrawList* dl, ImVec2 at, float size, ImU32 colour, const char* text) {
+    ImVec2 ts = ImGui::GetFont()->CalcTextSizeA(size, FLT_MAX, 0, text);
+    dl->AddText(ImGui::GetFont(), size, ImVec2(at.x - ts.x / 2, at.y - ts.y / 2), colour, text);
 }
 
 void DrawStick(ImDrawList* dl, float th) {
@@ -1422,6 +1481,26 @@ void DrawStick(ImDrawList* dl, float th) {
             at = ImVec2(f.x0, f.y0);
             held = true;
         }
+    if (ConsoleSkin()) {
+        // Authentic PS2 DualShock 2 / Xbox analog stick housing + concave thumb cap
+        dl->AddCircleFilled(at, r, Fade(16, 18, 22, held ? 165 : 120), 64);
+        dl->AddCircle(at, r, Fade(180, 195, 220, held ? 190 : 120), 64, th * 1.1f);
+        dl->AddCircle(at, r * 0.82f, Fade(90, 100, 115, held ? 120 : 75), 48, th * 0.6f);
+        for (int i = 0; i < 4; i++) {
+            float a = i * kPi / 2;
+            ImVec2 tip(at.x + std::cos(a) * r * 0.91f, at.y + std::sin(a) * r * 0.91f);
+            ImVec2 l(at.x + std::cos(a + 0.11f) * r * 0.77f, at.y + std::sin(a + 0.11f) * r * 0.77f);
+            ImVec2 rr(at.x + std::cos(a - 0.11f) * r * 0.77f, at.y + std::sin(a - 0.11f) * r * 0.77f);
+            dl->AddTriangleFilled(tip, l, rr, Fade(210, 225, 245, held ? 185 : 115));
+        }
+        ImVec2 knob(at.x + g_stick_x * r * 0.58f, at.y - g_stick_y * r * 0.58f);
+        float kr = r * 0.50f;
+        dl->AddCircleFilled(knob, kr, Fade(32, 36, 44, held ? 235 : 195), 48);
+        dl->AddCircle(knob, kr, Fade(220, 230, 245, held ? 235 : 170), 48, th * 1.1f);
+        dl->AddCircle(knob, kr * 0.68f, Fade(120, 135, 160, held ? 170 : 110), 36, th * 0.7f);
+        CentredText(dl, knob, kr * 0.56f, Fade(230, 240, 255, held ? 230 : 155), "L");
+        return;
+    }
     if (Skinned()) {
         // the ring with its arrows is the knob, about seven tenths of the base; it travels half the base's radius
         constexpr float kKnob = 0.72f, kTravel = 0.5f;
@@ -1444,10 +1523,142 @@ void DrawStick(ImDrawList* dl, float th) {
     dl->AddCircle(knob, r * 0.42f, Fade(255, 255, 255, held ? 180 : 110), 48, th * 0.7f);
 }
 
-// a text centred on a point, its height a share of the screen's
-void CentredText(ImDrawList* dl, ImVec2 at, float size, ImU32 colour, const char* text) {
-    ImVec2 ts = ImGui::GetFont()->CalcTextSizeA(size, FLT_MAX, 0, text);
-    dl->AddText(ImGui::GetFont(), size, ImVec2(at.x - ts.x / 2, at.y - ts.y / 2), colour, text);
+// Draws PS2 geometric symbols: 0 = Cross (X), 1 = Circle (O), 2 = Square ([]), 3 = Triangle (/\)
+void DrawPs2Shape(ImDrawList* dl, int shape, ImVec2 c, float sr, ImU32 col, float th) {
+    if (shape == 3) {  // Green Triangle
+        ImVec2 p0(c.x, c.y - sr * 0.92f);
+        ImVec2 p1(c.x - sr * 0.86f, c.y + sr * 0.68f);
+        ImVec2 p2(c.x + sr * 0.86f, c.y + sr * 0.68f);
+        dl->AddTriangle(p0, p1, p2, col, th);
+    } else if (shape == 1) {  // Red Circle
+        dl->AddCircle(c, sr * 0.82f, col, 32, th);
+    } else if (shape == 0) {  // Blue Cross
+        float d = sr * 0.72f;
+        dl->AddLine(ImVec2(c.x - d, c.y - d), ImVec2(c.x + d, c.y + d), col, th);
+        dl->AddLine(ImVec2(c.x + d, c.y - d), ImVec2(c.x - d, c.y + d), col, th);
+    } else if (shape == 2) {  // Pink Square
+        float d = sr * 0.74f;
+        dl->AddRect(ImVec2(c.x - d, c.y - d), ImVec2(c.x + d, c.y + d), col, 0.0f, 0, th);
+    }
+}
+
+void DrawConsoleButton(ImDrawList* dl, size_t i, ImVec2 c, float r, bool on, int fade, float th) {
+    const Button& b = kButtons[i];
+    int a_bg = (on ? 215 : 155) * fade / 100;
+    int a_fg = (on ? 255 : 225) * fade / 100;
+    int a_sub = (on ? 240 : 185) * fade / 100;
+    ImU32 bg = Fade(20, 23, 30, a_bg);
+
+    // 1. Face Buttons (Diamond: 15=Triangle/Y, 4=Circle/B, 7=Cross/A, 5=Square/X)
+    if (i == 15 || i == 4 || i == 7 || i == 5) {
+        int shape = (i == 7) ? 0 : (i == 4) ? 1 : (i == 5) ? 2 : 3;
+        const char* xbox_lbl = (i == 7) ? "A" : (i == 4) ? "B" : (i == 5) ? "X" : "Y";
+        const char* sub_lbl = (i == 15) ? "SILENCER" : (i == 4) ? (InMenus() ? "BACK" : "MELEE")
+                            : (i == 7)  ? (InMenus() ? "OK" : "RELOAD") : "USE";
+        ImU32 ps2_col = (i == 15) ? Fade(45, 230, 140, a_fg)
+                      : (i == 4)  ? Fade(255, 75, 75, a_fg)
+                      : (i == 7)  ? Fade(80, 170, 255, a_fg)
+                                  : Fade(255, 120, 210, a_fg);
+        ImU32 xb_col = (i == 15) ? Fade(255, 210, 45, a_fg)
+                     : (i == 4)  ? Fade(255, 75, 75, a_fg)
+                     : (i == 7)  ? Fade(70, 225, 90, a_fg)
+                                 : Fade(70, 160, 255, a_fg);
+        ImU32 rim_col = (g_skin == kXboxPad) ? xb_col : ps2_col;
+        dl->AddCircleFilled(c, r, on ? Fade(50, 58, 75, a_bg) : bg, 48);
+        dl->AddCircle(c, r, rim_col, 48, th * (on ? 1.6f : 1.15f));
+        dl->AddCircle(c, r * 0.86f, Fade(255, 255, 255, 40 * fade / 100), 48, th * 0.5f);
+
+        if (g_skin == kPs2) {
+            DrawPs2Shape(dl, shape, c, r * 0.48f, ps2_col, th * 1.65f);
+        } else if (g_skin == kXboxPad) {
+            CentredText(dl, c, r * 0.92f, xb_col, xbox_lbl);
+        } else {
+            // Dual PS2 + Xbox display: PS2 vector icon on left, Xbox letter on right
+            DrawPs2Shape(dl, shape, ImVec2(c.x - r * 0.30f, c.y), r * 0.33f, ps2_col, th * 1.35f);
+            dl->AddLine(ImVec2(c.x + r * 0.05f, c.y - r * 0.26f), ImVec2(c.x - r * 0.05f, c.y + r * 0.26f),
+                        Fade(200, 210, 225, 110 * fade / 100), th * 0.7f);
+            CentredText(dl, ImVec2(c.x + r * 0.32f, c.y), r * 0.64f, xb_col, xbox_lbl);
+        }
+        CentredText(dl, ImVec2(c.x, c.y + r * 1.18f), r * 0.34f, Fade(230, 238, 250, a_sub), sub_lbl);
+        return;
+    }
+
+    // 2. Shoulder Bumpers & Triggers (0=R1/RT Fire, 2=R2/LT Aim, 6=L2/LT Grenade, 1=L1/LB Left Fire)
+    if (i == 0 || i == 1 || i == 2 || i == 6) {
+        float bw = r * 1.28f, bh = r * 0.76f;
+        const char* main_lbl = (i == 0) ? (g_skin == kPs2 ? "R1" : (g_skin == kXboxPad ? "RT" : "R1 / RT"))
+                             : (i == 2) ? (g_skin == kPs2 ? "R2" : (g_skin == kXboxPad ? "LT" : "R2 / LT"))
+                             : (i == 6) ? (g_skin == kPs2 ? "L2" : (g_skin == kXboxPad ? "BLK" : "L2 / LT"))
+                                        : (g_skin == kPs2 ? "L1" : (g_skin == kXboxPad ? "WHT" : "L1 / LB"));
+        const char* sub_lbl = (i == 0) ? "FIRE" : (i == 2) ? "AIM" : (i == 6) ? "GRENADE" : "FIRE L";
+        ImU32 rim = (i == 0 || i == 1) ? Fade(255, 125, 70, a_fg)
+                  : (i == 2)           ? Fade(90, 200, 255, a_fg)
+                                       : Fade(190, 215, 240, a_fg);
+        dl->AddRectFilled(ImVec2(c.x - bw, c.y - bh), ImVec2(c.x + bw, c.y + bh),
+                          on ? Fade(65, 72, 90, a_bg) : bg, bh * 0.55f);
+        dl->AddRect(ImVec2(c.x - bw, c.y - bh), ImVec2(c.x + bw, c.y + bh), rim, bh * 0.55f, 0, th * (on ? 1.6f : 1.15f));
+        CentredText(dl, ImVec2(c.x, c.y - bh * 0.12f), r * 0.52f, Fade(255, 255, 255, a_fg), main_lbl);
+        CentredText(dl, ImVec2(c.x, c.y + bh * 0.52f), r * 0.32f, rim, sub_lbl);
+        return;
+    }
+
+    // 3. D-Pad Cross Buttons (3=Up/Mode, 10=Down/Health, 18=Left/Prev, 9=Right/Next, plus menu dpad 16,17,19)
+    if (i == 3 || i == 10 || i == 18 || i == 9 || i == 16 || i == 17 || i == 19) {
+        float s = r * 0.86f;
+        dl->AddRectFilled(ImVec2(c.x - s, c.y - s), ImVec2(c.x + s, c.y + s),
+                          on ? Fade(65, 75, 95, a_bg) : bg, s * 0.28f);
+        dl->AddRect(ImVec2(c.x - s, c.y - s), ImVec2(c.x + s, c.y + s),
+                    Fade(185, 200, 225, a_fg), s * 0.28f, 0, th * 1.1f);
+        ImU32 arrow_col = Fade(240, 245, 255, a_fg);
+        float ar = r * 0.44f;
+        if (i == 3 || i == 16) {  // Up
+            dl->AddTriangleFilled(ImVec2(c.x, c.y - ar), ImVec2(c.x - ar * 0.85f, c.y + ar * 0.65f),
+                                  ImVec2(c.x + ar * 0.85f, c.y + ar * 0.65f), arrow_col);
+            if (!InMenus()) CentredText(dl, ImVec2(c.x, c.y - r * 1.18f), r * 0.34f, Fade(220, 230, 245, a_sub), "MODE");
+        } else if (i == 10 || i == 17) {  // Down
+            dl->AddTriangleFilled(ImVec2(c.x, c.y + ar), ImVec2(c.x - ar * 0.85f, c.y - ar * 0.65f),
+                                  ImVec2(c.x + ar * 0.85f, c.y - ar * 0.65f), arrow_col);
+            if (!InMenus()) CentredText(dl, ImVec2(c.x, c.y + r * 1.18f), r * 0.34f, Fade(120, 235, 150, a_sub), "MED");
+        } else if (i == 18) {  // Left
+            dl->AddTriangleFilled(ImVec2(c.x - ar, c.y), ImVec2(c.x + ar * 0.65f, c.y - ar * 0.85f),
+                                  ImVec2(c.x + ar * 0.65f, c.y + ar * 0.85f), arrow_col);
+            if (!InMenus()) CentredText(dl, ImVec2(c.x, c.y + r * 1.16f), r * 0.30f, Fade(220, 230, 245, a_sub), "PREV");
+        } else {  // Right
+            dl->AddTriangleFilled(ImVec2(c.x + ar, c.y), ImVec2(c.x - ar * 0.65f, c.y - ar * 0.85f),
+                                  ImVec2(c.x - ar * 0.65f, c.y + ar * 0.85f), arrow_col);
+            if (!InMenus()) CentredText(dl, ImVec2(c.x, c.y + r * 1.16f), r * 0.30f, Fade(220, 230, 245, a_sub), "NEXT");
+        }
+        return;
+    }
+
+    // 4. Left Thumbstick Click L3 (8=Crouch)
+    if (i == 8) {
+        dl->AddCircleFilled(c, r, on ? Fade(60, 70, 90, a_bg) : bg, 40);
+        dl->AddCircle(c, r, Fade(175, 195, 225, a_fg), 40, th * 1.15f);
+        dl->AddCircle(c, r * 0.78f, Fade(120, 140, 170, a_sub), 36, th * 0.6f);
+        CentredText(dl, c, r * 0.62f, Fade(255, 255, 255, a_fg), "L3");
+        CentredText(dl, ImVec2(c.x, c.y + r * 1.20f), r * 0.34f, Fade(220, 230, 245, a_sub), "CROUCH");
+        return;
+    }
+
+    // 5. Center Console Buttons: 11 = SELECT / BACK (Objectives), 12 = START (Pause)
+    if (i == 11 || i == 12) {
+        float bw = r * 1.22f, bh = r * 0.56f;
+        const char* lbl = (i == 12) ? "START" : (g_skin == kXboxPad ? "BACK" : "SELECT");
+        const char* sub = (i == 12) ? "PAUSE" : "MAP";
+        dl->AddRectFilled(ImVec2(c.x - bw, c.y - bh), ImVec2(c.x + bw, c.y + bh),
+                          on ? Fade(65, 75, 95, a_bg) : bg, bh * 0.5f);
+        dl->AddRect(ImVec2(c.x - bw, c.y - bh), ImVec2(c.x + bw, c.y + bh),
+                    Fade(190, 205, 230, a_fg), bh * 0.5f, 0, th * 1.0f);
+        CentredText(dl, c, r * 0.44f, Fade(255, 255, 255, a_fg), lbl);
+        CentredText(dl, ImVec2(c.x, c.y + bh + r * 0.32f), r * 0.32f, Fade(200, 215, 235, a_sub), sub);
+        return;
+    }
+
+    // 6. Utility buttons (Gyro, Panel, Scope Zoom)
+    dl->AddCircleFilled(c, r, on ? Fade(65, 75, 95, a_bg) : bg, 48);
+    dl->AddCircle(c, r, Fade(185, 200, 225, a_fg), 48, th * 0.9f);
+    DrawIcon({dl, c, r, Fade(255, 255, 255, a_fg), th}, b.icon);
 }
 
 // the editor's bar, drawn as the controls are: Reset, Cancel, Done, and what to do under it
@@ -1492,7 +1703,9 @@ void Draw() {
         bool hidden = g_layout[i].hidden;
         bool on = !editing && (g_pressed[i] || (b.press == kGyro && gyro::CurrentMode() != gyro::kOff));
         int fade = hidden ? 40 : 100;  // a hidden control shows faint in the editor
-        if (Skinned()) {
+        if (ConsoleSkin()) {
+            DrawConsoleButton(dl, i, ImVec2(cx, cy), r * (on ? 0.93f : 1.0f), on, fade, th);
+        } else if (Skinned()) {
             // pressed in a little and lit; the icons the skin has none of (the menus' arrows, the scope's zoom) drawn
             // on its plain circle in its colours
             float k = on ? 0.92f : 1.0f;
@@ -1522,7 +1735,7 @@ void Draw() {
             dl->AddLine(ImVec2(cx - k, cy + k), ImVec2(cx + k, cy - k), IM_COL32(255, 80, 60, 220), th);
         }
     }
-    if (editing || (!InMenus() && !app::MenuOpen() && input::Play())) DrawStick(dl, th);
+    if (editing || (!app::MenuOpen() && (ConsoleMode() || (!InMenus() && input::Play())))) DrawStick(dl, th);
     if (editing) {
         if (g_selected == int(kStick)) {
             ImVec2 at(g_layout[kStick].x * Width(), g_layout[kStick].y * h);
