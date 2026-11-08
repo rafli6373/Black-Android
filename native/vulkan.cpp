@@ -227,7 +227,7 @@ float4 pscolor(O i) : SV_Target {
 }
 )";
 
-// 34 bespoke texture-mapped weapon skins: 1..17 Mythic Pack + 18..34 Tactical CS2 Custom Pack (ext.x = 1..34, ext.y = seconds)
+// 51 bespoke texture-mapped weapon skins: 1..17 Mythic + 18..34 Tactical CS2 + 35..51 Imperial Gold Dragon & Komodo (ext.x = 1..51, ext.y = seconds)
 struct WeaponSkinHooks final : ShaderHooks {
     std::string Output() const override {
         return R"(
@@ -415,24 +415,127 @@ struct WeaponSkinHooks final : ShaderHooks {
             cell = 10;
             tuv = raw_uv * 1.40 + float2(0.50, 0.18);
             trim_metal = float3(1.0, 0.85, 0.08);
-        } else { // 34: M203 Grenade Launcher - Prism Disarray Shards
+        } else if (skin == 34) { // 34: M203 Grenade Launcher - Prism Disarray Shards
             cell = 8;
             tuv = raw_uv * 1.52 + float2(0.32, 0.38);
             trim_metal = float3(0.98, 0.22, 0.28);
+        } else if (skin == 35) { // 35: AK-47 - Imperial White-Gold Thunder Dragon
+            cell = 12;
+            tuv = raw_uv * 1.52;
+            trim_metal = float3(1.0, 0.84, 0.24);
+            glow_tint = float3(0.08, 0.76, 1.0);
+            glow_boost = 0.78;
+        } else if (skin == 36) { // 36: M16A2 - Golden Komodo Dragon & Stone Relief
+            cell = 15;
+            tuv = raw_uv * 1.50;
+            trim_metal = float3(1.0, 0.80, 0.20);
+            glow_tint = float3(0.24, 0.42, 1.0);
+            glow_boost = 0.78;
+        } else if (skin == 37) { // 37: M16A2 + M203 - Storm Wyrm Gold Scales & Lightning Coils
+            cell = 13;
+            tuv = raw_uv * 1.55;
+            trim_metal = float3(1.0, 0.86, 0.30);
+            glow_tint = float3(0.10, 0.82, 1.0);
+            glow_boost = 0.82;
+        } else if (skin == 38) { // 38: G36C - Cracked Stone Komodo Relief & Golden Claws
+            cell = 16;
+            tuv = raw_uv * 1.55;
+            trim_metal = float3(0.98, 0.82, 0.28);
+            glow_tint = float3(0.18, 0.50, 1.0);
+            glow_boost = 0.74;
+        } else if (skin == 39) { // 39: MP5 - Celestial Ivory Filigree & Storm Reactor
+            cell = 14;
+            tuv = raw_uv * 1.68;
+            trim_metal = float3(1.0, 0.88, 0.42);
+            glow_tint = float3(0.12, 0.78, 1.0);
+            glow_boost = 0.72;
+        } else if (skin == 40) { // 40: FN P90 - Apex Reptile King Gold-Obsidian & Violet Plasma
+            cell = 17;
+            tuv = raw_uv * 1.65 + float2(0.16, 0.14);
+            trim_metal = float3(1.0, 0.78, 0.18);
+            glow_tint = float3(0.42, 0.24, 1.0);
+            glow_boost = 0.80;
+        } else if (skin == 41) { // 41: MAC-10 - High-Voltage Gold Dragon Scales
+            cell = 13;
+            tuv = raw_uv * 1.92 + float2(0.22, 0.34);
+            trim_metal = float3(1.0, 0.85, 0.25);
+            glow_tint = float3(0.08, 0.86, 1.0);
+            glow_boost = 0.78;
+        } else if (skin == 42) { // 42: Uzi - Golden Komodo Venom Plasma
+            cell = 15;
+            tuv = raw_uv * 1.88 + float2(0.38, 0.18);
+            trim_metal = float3(1.0, 0.80, 0.22);
+            glow_tint = float3(0.48, 0.20, 1.0);
+            glow_boost = 0.76;
+        } else if (skin == 43) { // 43: Pistol DC3 - Imperial Ivory & 24K Dragon Engraving
+            cell = 14;
+            tuv = raw_uv * 1.98 + float2(0.14, 0.28);
+            trim_metal = float3(1.0, 0.86, 0.34);
+            glow_tint = float3(0.14, 0.76, 1.0);
+            glow_boost = 0.68;
+        } else if (skin == 44) { // 44: Glock 19 - White Stone Reptile Fang & Gold Bevels
+            cell = 16;
+            tuv = raw_uv * 2.00 + float2(0.46, 0.32);
+            trim_metal = float3(1.0, 0.82, 0.26);
+            glow_tint = float3(0.22, 0.46, 1.0);
+            glow_boost = 0.72;
+        } else if (skin == 45) { // 45: Magnum .44 - Thunder Dragon 24K Gold Revolver
+            cell = 12;
+            tuv = raw_uv * 1.82 + float2(0.28, 0.44);
+            trim_metal = float3(1.0, 0.85, 0.28);
+            glow_tint = float3(0.10, 0.80, 1.0);
+            glow_boost = 0.76;
+        } else if (skin == 46) { // 46: Remington 870 - Komodo Predator Talon Shotgun
+            cell = 17;
+            tuv = raw_uv * float2(1.48, 1.72) + float2(0.12, 0.16);
+            trim_metal = float3(1.0, 0.78, 0.20);
+            glow_tint = float3(0.32, 0.30, 1.0);
+            glow_boost = 0.78;
+        } else if (skin == 47) { // 47: SPAS 12 - Heavy High-Voltage Lightning Dragon
+            cell = 13;
+            tuv = raw_uv * float2(1.50, 1.72) + float2(0.26, 0.38);
+            trim_metal = float3(1.0, 0.86, 0.32);
+            glow_tint = float3(0.06, 0.84, 1.0);
+            glow_boost = 0.84;
+        } else if (skin == 48) { // 48: Walther WA2000 - Celestial White Porcelain Dragon Sniper
+            cell = 12;
+            tuv = raw_uv * 1.54 + float2(0.08, 0.14);
+            trim_metal = float3(0.98, 0.90, 0.52);
+            glow_tint = float3(0.12, 0.80, 1.0);
+            glow_boost = 0.74;
+        } else if (skin == 49) { // 49: M249 SAW - Behemoth Golden Komodo LMG
+            cell = 15;
+            tuv = raw_uv * 1.42 + float2(0.06, 0.10);
+            trim_metal = float3(1.0, 0.80, 0.20);
+            glow_tint = float3(0.28, 0.38, 1.0);
+            glow_boost = 0.80;
+        } else if (skin == 50) { // 50: RPG-7 - Thunder Coil Gold Dragon Launcher
+            cell = 13;
+            tuv = raw_uv * 1.46 + float2(0.48, 0.20);
+            trim_metal = float3(1.0, 0.84, 0.24);
+            glow_tint = float3(0.08, 0.86, 1.0);
+            glow_boost = 0.86;
+        } else { // 51: M203 Grenade Launcher - Sculpted Komodo Core
+            cell = 16;
+            tuv = raw_uv * 1.60 + float2(0.34, 0.36);
+            trim_metal = float3(1.0, 0.82, 0.26);
+            glow_tint = float3(0.26, 0.44, 1.0);
+            glow_boost = 0.78;
         }
 
+        float2 kAtlasScale = float2(1.0 / 3.0, 1.0 / 6.0);
         float2 fuv = clamp(frac(tuv), 0.002, 0.998);
-        float2 cell_uv = (float2((float)(cell % 3), (float)(cell / 3)) + fuv) * float2(1.0 / 3.0, 0.25);
+        float2 cell_uv = (float2((float)(cell % 3), (float)(cell / 3)) + fuv) * kAtlasScale;
         float3 tex = skin_atlas.SampleLevel(skin_samp, cell_uv, 0.0).rgb;
 
         float3 camo;
         if (skin <= 17) {
             if (skin == 15) {
-                float2 lore_uv = (float2(1.0, 1.0) + fuv) * float2(1.0 / 3.0, 0.25);
+                float2 lore_uv = (float2(1.0, 1.0) + fuv) * kAtlasScale;
                 float3 lore_tex = skin_atlas.SampleLevel(skin_samp, lore_uv, 0.0).rgb;
                 tex = lerp(tex, lore_tex, edge_trim * 0.55);
             } else if (skin == 17) {
-                float2 ice_uv = fuv * float2(1.0 / 3.0, 0.25);
+                float2 ice_uv = fuv * kAtlasScale;
                 float3 ice_tex = skin_atlas.SampleLevel(skin_samp, ice_uv, 0.0).rgb;
                 tex = lerp(tex, ice_tex, edge_trim * 0.48);
             } else if (skin == 6) {
@@ -455,17 +558,17 @@ struct WeaponSkinHooks final : ShaderHooks {
             float3 emissive = glow_tint * energy_mask * glow_boost * pulse;
             float3 specular = trim_metal * (spec * 0.52 + metal_glint * edge_trim * 0.22);
             camo = sculpted + emissive + specular;
-        } else {
+        } else if (skin <= 34) {
             if (skin == 29) {
-                float2 shard_uv = (float2(2.0, 2.0) + fuv) * float2(1.0 / 3.0, 0.25);
+                float2 shard_uv = (float2(2.0, 2.0) + fuv) * kAtlasScale;
                 float3 shard_tex = skin_atlas.SampleLevel(skin_samp, shard_uv, 0.0).rgb;
                 tex = lerp(tex, shard_tex, smoothstep(0.35, 0.68, luma) * 0.65);
             } else if (skin == 30) {
-                float2 sf_uv = (float2(1.0, 2.0) + fuv) * float2(1.0 / 3.0, 0.25);
+                float2 sf_uv = (float2(1.0, 2.0) + fuv) * kAtlasScale;
                 float3 sf_tex = skin_atlas.SampleLevel(skin_samp, sf_uv, 0.0).rgb;
                 tex = lerp(tex, sf_tex, smoothstep(0.45, 0.78, luma) * 0.50);
             } else if (skin == 31) {
-                float2 urb_uv = (float2(2.0, 3.0) + fuv) * float2(1.0 / 3.0, 0.25);
+                float2 urb_uv = (float2(2.0, 3.0) + fuv) * kAtlasScale;
                 float3 urb_tex = skin_atlas.SampleLevel(skin_samp, urb_uv, 0.0).rgb;
                 tex = lerp(tex, urb_tex, smoothstep(0.42, 0.75, luma) * 0.52);
             }
@@ -476,6 +579,39 @@ struct WeaponSkinHooks final : ShaderHooks {
             paint = lerp(paint, trim_metal * tac_shade, tac_edge * 0.20);
             float3 tac_spec = trim_metal * (spec * 0.32);
             camo = paint + tac_spec;
+        } else {
+            if (skin == 35) {
+                float2 coil_uv = (float2(1.0, 4.0) + fuv) * kAtlasScale;
+                tex = lerp(tex, skin_atlas.SampleLevel(skin_samp, coil_uv, 0.0).rgb, edge_trim * 0.45);
+            } else if (skin == 36) {
+                float2 stone_uv = (float2(1.0, 5.0) + fuv) * kAtlasScale;
+                tex = lerp(tex, skin_atlas.SampleLevel(skin_samp, stone_uv, 0.0).rgb, smoothstep(0.38, 0.72, luma) * 0.48);
+            } else if (skin == 46) {
+                float2 kscale_uv = (float2(0.0, 5.0) + fuv) * kAtlasScale;
+                tex = lerp(tex, skin_atlas.SampleLevel(skin_samp, kscale_uv, 0.0).rgb, edge_trim * 0.50);
+            } else if (skin == 47) {
+                float2 porc_uv = (float2(0.0, 4.0) + fuv) * kAtlasScale;
+                tex = lerp(tex, skin_atlas.SampleLevel(skin_samp, porc_uv, 0.0).rgb, smoothstep(0.45, 0.78, luma) * 0.46);
+            } else if (skin == 48) {
+                float2 fil_uv = (float2(2.0, 4.0) + fuv) * kAtlasScale;
+                tex = lerp(tex, skin_atlas.SampleLevel(skin_samp, fil_uv, 0.0).rgb, edge_trim * 0.48);
+            } else if (skin == 49) {
+                float2 apex_uv = (float2(2.0, 5.0) + fuv) * kAtlasScale;
+                tex = lerp(tex, skin_atlas.SampleLevel(skin_samp, apex_uv, 0.0).rgb, edge_trim * 0.45);
+            }
+
+            float imp_shade = clamp(0.56 + luma * 1.18, 0.40, 1.42);
+            float tex_luma = dot(tex, float3(0.299, 0.587, 0.114));
+            float plasma_mask = saturate((tex.b - max(tex.r, tex.g * 0.75)) * 2.8);
+            float arc = sin(tuv.x * 11.0 - tuv.y * 7.5 + t * 6.5) * sin(tuv.x * 4.3 + tuv.y * 9.1 - t * 4.2);
+            float lightning = 0.78 + 0.72 * pow(saturate(arc * 0.5 + 0.5), 2.5);
+            float gold_glint = pow(max(sin(tuv.x * 3.6 - tuv.y * 2.4 + t * 2.1) * 0.5 + 0.5, 0.0001), 7.0);
+
+            float3 imp_body = tex * imp_shade;
+            imp_body = lerp(imp_body, trim_metal * imp_shade * (0.90 + 0.30 * tex_luma), edge_trim * 0.25);
+            float3 imp_emissive = glow_tint * plasma_mask * glow_boost * lightning;
+            float3 imp_spec = trim_metal * (spec * 0.48 + gold_glint * edge_trim * 0.24);
+            camo = imp_body + imp_emissive + imp_spec;
         }
         outc.rgb = lerp(outc.rgb, saturate(camo), mask);
     }
@@ -1494,7 +1630,7 @@ private:
     bool ui_ = false;
     uint8_t ramp_[768] = {};
     bool ramp_dirty_ = false;
-    Image mythic_atlas_;  // the 3x4 Mythic & Tactical weapon skin texture atlas (skins/mythic_atlas.png), made once
+    Image mythic_atlas_;  // the 3x6 Mythic, Tactical & Gold Beast weapon skin texture atlas (skins/mythic_atlas.png), made once
     bool mythic_tried_ = false;
     Image skin_;  // the touch controls' button skins (touch.cpp), made once
     bool skin_tried_ = false;
@@ -1850,7 +1986,7 @@ bool VulkanBackend::CreateLayouts() {
     VK_CHECK(vkCreatePipelineLayout(dev_, &pi, nullptr, &layout_));
     // pipelines from earlier runs: building them is what stutters on a phone
     std::vector<char> blob;
-    std::ifstream f(app::ExeDir() / "shadercache" / "pipelines_v4.bin", std::ios::binary);
+    std::ifstream f(app::ExeDir() / "shadercache" / "pipelines_v5.bin", std::ios::binary);
     if (f) blob.assign(std::istreambuf_iterator<char>(f), {});
     VkPipelineCacheCreateInfo ci{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
     ci.initialDataSize = blob.size();
@@ -3172,11 +3308,13 @@ void VulkanBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t
         uint32_t opt_skin = game::Opt().weapon_skin;
         uint32_t held = weapons::HeldSkinId();
         if (held < 1 || held > 17) held = 1;
-        uint32_t active_skin = held + 17;
-        if (opt_skin == 1) active_skin = held + 17;
-        else if (opt_skin == 2) active_skin = held;
-        else if (opt_skin >= 3 && opt_skin <= 19) active_skin = opt_skin + 15;
-        else if (opt_skin >= 20 && opt_skin <= 36) active_skin = opt_skin - 19;
+        uint32_t active_skin = held + 34;
+        if (opt_skin == 1) active_skin = held + 34;
+        else if (opt_skin == 2) active_skin = held + 17;
+        else if (opt_skin == 3) active_skin = held;
+        else if (opt_skin >= 4 && opt_skin <= 20) active_skin = opt_skin + 31;
+        else if (opt_skin >= 21 && opt_skin <= 37) active_skin = opt_skin - 3;
+        else if (opt_skin >= 38 && opt_skin <= 54) active_skin = opt_skin - 37;
         c.ext[0] = float(active_skin);
         c.ext[1] = std::fmod(std::chrono::duration<float>(clock::now().time_since_epoch()).count(), 1000.0f);
     }
@@ -3589,7 +3727,7 @@ void VulkanBackend::UploadGammaRamp() {
     Transition(lut_, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-// the 3x4 Mythic & Tactical weapon skin texture atlas (skins/mythic_atlas.png), sampled at t4 in 3D pixel shaders
+// the 3x6 Mythic, Tactical & Gold Beast weapon skin texture atlas (skins/mythic_atlas.png), sampled at t4 in 3D pixel shaders
 void VulkanBackend::UploadMythicAtlas() {
     mythic_tried_ = true;
     SDL_Surface* png = SDL_LoadPNG("skins/mythic_atlas.png");
@@ -3680,7 +3818,7 @@ void VulkanBackend::SavePipelineCache() {
     if (vkGetPipelineCacheData(dev_, cache_, &size, nullptr) != VK_SUCCESS || size == cache_saved_) return;
     std::vector<char> blob(size);
     if (vkGetPipelineCacheData(dev_, cache_, &size, blob.data()) != VK_SUCCESS) return;
-    std::filesystem::path p = app::ExeDir() / "shadercache" / "pipelines_v4.bin", tmp = p;
+    std::filesystem::path p = app::ExeDir() / "shadercache" / "pipelines_v5.bin", tmp = p;
     tmp += ".tmp";
     {
         std::ofstream f(tmp, std::ios::binary);

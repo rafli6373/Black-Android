@@ -19,7 +19,7 @@ namespace {
 std::filesystem::path g_dir;
 std::mutex g_lock;
 // bumped when the translation below changes, so older cached modules are not used
-constexpr uint32_t kCacheVersion = 4;
+constexpr uint32_t kCacheVersion = 5;
 
 struct Param {
     std::string type, name;

@@ -19,7 +19,7 @@ struct Options {
     // a look over the frame: 0 none, 1 and 2 a CRT (light, strong), 3 sharpen, 4 vibrant, 5 noir, 6 sepia,
     // 7 night vision, 8 VHS, 9 cinematic, 10 thermal, 11 cyberpunk
     uint32_t screen_filter = 0;
-    uint32_t weapon_skin = 1;  // 0 off, 1 auto tactical (18..34), 2 auto mythic (1..17), 3..19 tactical, 20..36 mythic
+    uint32_t weapon_skin = 1;  // 0 off, 1 auto gold beast (35..51), 2 auto tactical (18..34), 3 auto mythic (1..17), 4..54 manual
     bool reload_blur = true;
     bool bloom = true;  // the glow added over bright parts of the frame (native/vulkan.cpp)
     bool fog = true;
