@@ -47,6 +47,7 @@ void Load(const void* table) {
 
 // after the settings load, before boot
 void Init() {
+    Opt().weapon_skin = std::min<uint32_t>(Opt().weapon_skin, 18u);
     BootLanguage();  // latched before the options can change the setting
     input::LoadBindings();
     audio::SetOutputMode(Opt().audio_output);
@@ -99,7 +100,7 @@ const app::GameInfo app::kGame = {
                 {"hdr", &game::Opt().hdr, nullptr},
                 {"fmv_scale", nullptr, &game::Opt().fmv_scale},
                 {"screen_filter", nullptr, &game::Opt().screen_filter},
-                {"weapon_skin", nullptr, &game::Opt().weapon_skin},
+                {"weapon_skin_v2", nullptr, &game::Opt().weapon_skin},
                 {"invert_mouse", &game::Opt().invert_mouse, nullptr},
                 {"hold_aim", &game::Opt().hold_aim, nullptr},
                 {"walk_speed", nullptr, &game::Opt().walk_speed},

@@ -28,6 +28,7 @@
 #include "app/app.h"
 #include "common/aspect.h"
 #include "common/options.h"
+#include "game/weapons.h"
 #include "core/log.h"
 #include "d3d/gpu_frame.h"
 #include "gpu/backend.h"
@@ -226,7 +227,7 @@ float4 pscolor(O i) : SV_Target {
 }
 )";
 
-// COD Mobile-inspired procedural weapon skins applied on first-person weapon draws (ext.x = skin id, ext.y = seconds)
+// 17 bespoke texture-mapped Mythic / Legendary weapon skins (ext.x = 1..17 weapon skin id, ext.y = seconds)
 struct WeaponSkinHooks final : ShaderHooks {
     std::string Output() const override {
         return R"(
@@ -235,60 +236,155 @@ struct WeaponSkinHooks final : ShaderHooks {
         int skin = (int)(ext.x + 0.5);
         float t = ext.y;
         float luma = dot(outc.rgb, float3(0.299, 0.587, 0.114));
-        float flesh = saturate((outc.r - outc.g * 1.15) * 8.0) * saturate((outc.g - outc.b * 1.10) * 8.0);
-        float mask = (1.0 - flesh) * smoothstep(0.02, 0.08, luma);
-        float shade = clamp(luma * 1.65, 0.18, 1.35);
-        float spec = pow(saturate(luma * 1.15), 3.0);
-        float2 uv = tc0.xy * 6.0 + i.pos.xy * 0.0025;
-        float w1 = sin(uv.x * 14.0 + sin(uv.y * 11.0 + t * 0.8) * 2.5);
-        float w2 = cos(uv.y * 16.0 - sin(uv.x * 13.0 - t * 0.6) * 2.5);
-        float pat = saturate(w1 * w2 * 0.5 + 0.5);
-        float3 camo = outc.rgb;
-        if (skin == 1) {
-            float etch = smoothstep(0.42, 0.58, abs(sin(uv.x * 18.0 + sin(uv.y * 14.0) * 3.0)));
-            float sweep = pow(saturate(sin(uv.x * 2.5 + uv.y * 1.5 - t * 2.2) * 0.5 + 0.5), 6.0);
-            float3 base_gold = lerp(float3(0.55, 0.36, 0.06), float3(1.0, 0.80, 0.24), etch);
-            camo = base_gold * shade + float3(1.0, 0.94, 0.72) * (spec * 0.65 + sweep * 0.25);
-        } else if (skin == 2) {
-            float2 cell = frac(uv * 18.0) - 0.5;
-            float2 id = floor(uv * 18.0);
-            float h = frac(sin(dot(id, float2(12.9898, 78.233))) * 43758.5453);
-            float facet = saturate(1.0 - dot(cell, cell) * 5.5);
-            float glint = pow(saturate(sin(h * 6.283 + t * 3.5 + luma * 8.0) * 0.5 + 0.5), 5.0);
-            float3 crystal = lerp(float3(0.72, 0.86, 1.0), float3(1.0, 1.0, 1.0), facet) * (0.65 + glint * 0.75);
-            float3 gold_trim = float3(0.95, 0.75, 0.22) * shade;
-            camo = lerp(gold_trim, crystal * shade, smoothstep(0.18, 0.45, facet)) + spec * 0.45;
-        } else if (skin == 3) {
-            float wave = abs(sin(uv.x * 16.0 + sin(uv.y * 12.0) * 3.2 + cos((uv.x + uv.y) * 9.0) * 2.0));
-            float vein = smoothstep(0.72, 0.88, wave);
-            float3 steel = lerp(float3(0.06, 0.14, 0.38), float3(0.16, 0.34, 0.68), wave);
-            float3 ruby = float3(0.88, 0.10, 0.32);
-            camo = lerp(steel, ruby, vein) * shade + float3(0.55, 0.75, 1.0) * spec * 0.45;
-        } else if (skin == 4) {
-            float plasma = sin(uv.x * 10.0 + t * 2.0 + sin(uv.y * 9.0 - t * 1.6) * 2.8) * 0.5 + 0.5;
-            float core = pow(plasma, 3.0);
-            float3 void_col = lerp(float3(0.12, 0.02, 0.26), float3(0.68, 0.08, 0.96), plasma);
-            float3 hot_col = float3(1.0, 0.45, 0.98) * core * 0.65;
-            camo = void_col * shade + hot_col + float3(0.85, 0.55, 1.0) * spec * 0.35;
-        } else if (skin == 5) {
-            float crack = pow(saturate(1.0 - abs(sin(uv.x * 11.0 + sin(uv.y * 10.0 + t * 1.4) * 2.6))), 4.0);
-            float pulse = 0.75 + 0.25 * sin(t * 3.0 + uv.x * 4.0);
-            float3 rock = float3(0.11, 0.09, 0.09) * shade;
-            float3 lava = lerp(float3(1.0, 0.22, 0.02), float3(1.0, 0.88, 0.20), crack) * crack * pulse * 1.45;
-            camo = rock + lava + float3(1.0, 0.55, 0.15) * spec * 0.30;
-        } else if (skin == 6) {
-            float2 grid = abs(frac(uv * 5.0) - 0.5);
-            float line_mask = smoothstep(0.42, 0.48, max(grid.x, grid.y));
-            float scan = pow(saturate(sin(uv.x * 3.0 + uv.y * 2.0 - t * 2.8) * 0.5 + 0.5), 4.0);
-            float3 neon = lerp(float3(0.0, 0.95, 1.0), float3(1.0, 0.08, 0.72), pat);
-            float3 carbon = float3(0.08, 0.10, 0.14) * shade;
-            camo = carbon + neon * (line_mask * (0.45 + 0.55 * scan) + spec * 0.45);
-        } else if (skin == 7) {
-            float jade_w = sin(uv.x * 12.0 + sin(uv.y * 10.0 + t * 1.1) * 2.4) * 0.5 + 0.5;
-            float gold_v = smoothstep(0.82, 0.94, jade_w);
-            float3 jade = lerp(float3(0.03, 0.32, 0.16), float3(0.16, 0.88, 0.48), jade_w) * shade;
-            camo = lerp(jade, float3(1.0, 0.84, 0.28) * shade, gold_v) + float3(0.55, 1.0, 0.75) * spec * 0.45;
+        float flesh = saturate((outc.r - outc.g * 1.12) * 7.5) * saturate((outc.g - outc.b * 1.08) * 7.5);
+        float mask = (1.0 - flesh) * smoothstep(0.015, 0.065, luma);
+        float shade = clamp(0.46 + luma * 1.38, 0.30, 1.48);
+        float spec = pow(max(saturate(luma * 1.18), 0.0001), 3.2);
+        float edge_trim = smoothstep(0.42, 0.76, luma);
+
+        float2 raw_uv = (abs(tc0.x) + abs(tc0.y) > 0.0001) ? tc0.xy : (i.pos.xy * 0.0025);
+        int cell = 0;
+        float2 tuv = raw_uv * 1.65;
+        float3 trim_metal = float3(0.96, 0.80, 0.32);
+        float3 glow_tint = float3(0.15, 0.78, 1.0);
+        float glow_boost = 0.55;
+
+        if (skin == 1) { // 1: AK-47 - Emperor's Gold Dragon Lore
+            cell = 4;
+            tuv = raw_uv * 1.55;
+            trim_metal = float3(1.0, 0.82, 0.26);
+            glow_tint = float3(1.0, 0.38, 0.08);
+            glow_boost = 0.42;
+        } else if (skin == 2) { // 2: M16A2 - Frostfire Azure Dragon
+            cell = 0;
+            tuv = raw_uv * 1.65;
+            trim_metal = float3(0.92, 0.95, 1.0);
+            glow_tint = float3(0.10, 0.82, 1.0);
+            glow_boost = 0.68;
+        } else if (skin == 3) { // 3: M16A2 + M203 - Imperial Crimson Dragon
+            cell = 3;
+            tuv = raw_uv * 1.60;
+            trim_metal = float3(1.0, 0.80, 0.24);
+            glow_tint = float3(1.0, 0.36, 0.06);
+            glow_boost = 0.62;
+        } else if (skin == 4) { // 4: G36C - Abyssal Singularity Void
+            cell = 1;
+            tuv = raw_uv * 1.60;
+            trim_metal = float3(0.72, 0.68, 0.82);
+            glow_tint = float3(0.78, 0.18, 1.0);
+            glow_boost = 0.75;
+        } else if (skin == 5) { // 5: MP5 - Solar Vermilion Phoenix
+            cell = 2;
+            tuv = raw_uv * 1.75;
+            trim_metal = float3(1.0, 0.80, 0.28);
+            glow_tint = float3(1.0, 0.48, 0.08);
+            glow_boost = 0.68;
+        } else if (skin == 6) { // 6: FN P90 - Nebula Blackhole Vortex
+            cell = 1;
+            tuv = float2(raw_uv.x * 0.82 - raw_uv.y * 0.57, raw_uv.x * 0.57 + raw_uv.y * 0.82) * 1.80 + float2(0.33, 0.17);
+            trim_metal = float3(0.62, 0.72, 0.95);
+            glow_tint = float3(0.58, 0.28, 1.0);
+            glow_boost = 0.80;
+        } else if (skin == 7) { // 7: MAC-10 - Ruby Molten Phoenix
+            cell = 2;
+            tuv = raw_uv * 2.05 + float2(0.25, 0.40);
+            trim_metal = float3(1.0, 0.85, 0.32);
+            glow_tint = float3(1.0, 0.32, 0.12);
+            glow_boost = 0.72;
+        } else if (skin == 8) { // 8: Uzi - Subzero Glacier Dragon
+            cell = 0;
+            tuv = raw_uv * 2.00 + float2(0.45, 0.20);
+            trim_metal = float3(0.88, 0.96, 1.0);
+            glow_tint = float3(0.22, 0.92, 1.0);
+            glow_boost = 0.72;
+        } else if (skin == 9) { // 9: Pistol (DC3) - Emperor Gold Dragon
+            cell = 4;
+            tuv = raw_uv * 2.10 + float2(0.15, 0.35);
+            trim_metal = float3(1.0, 0.86, 0.35);
+            glow_tint = float3(1.0, 0.45, 0.10);
+            glow_boost = 0.48;
+        } else if (skin == 10) { // 10: Glock 19 - Abyssal Amethyst Vortex
+            cell = 1;
+            tuv = raw_uv * 2.15 + float2(0.52, 0.28);
+            trim_metal = float3(0.76, 0.62, 0.92);
+            glow_tint = float3(0.88, 0.15, 0.95);
+            glow_boost = 0.74;
+        } else if (skin == 11) { // 11: Magnum .44 - Blood Dragon Revolver
+            cell = 3;
+            tuv = raw_uv * 1.95 + float2(0.20, 0.50);
+            trim_metal = float3(1.0, 0.84, 0.28);
+            glow_tint = float3(1.0, 0.28, 0.05);
+            glow_boost = 0.65;
+        } else if (skin == 12) { // 12: Remington 870 - Molten Dragonbreath
+            cell = 3;
+            tuv = raw_uv * float2(1.50, 1.85) + float2(0.10, 0.15);
+            trim_metal = float3(1.0, 0.76, 0.22);
+            glow_tint = float3(1.0, 0.44, 0.04);
+            glow_boost = 0.78;
+        } else if (skin == 13) { // 13: SPAS 12 - Cobalt Frostwyrm
+            cell = 0;
+            tuv = raw_uv * float2(1.55, 1.80) + float2(0.30, 0.55);
+            trim_metal = float3(0.95, 0.84, 0.40);
+            glow_tint = float3(0.08, 0.68, 1.0);
+            glow_boost = 0.74;
+        } else if (skin == 14) { // 14: Walther WA2000 - Celestial Jade Dragon
+            cell = 5;
+            tuv = raw_uv * 1.65;
+            trim_metal = float3(1.0, 0.84, 0.32);
+            glow_tint = float3(0.10, 0.96, 0.74);
+            glow_boost = 0.68;
+        } else if (skin == 15) { // 15: M249 SAW - Supreme Imperial Wyrm
+            cell = 3;
+            tuv = raw_uv * 1.45;
+            trim_metal = float3(1.0, 0.85, 0.28);
+            glow_tint = float3(1.0, 0.52, 0.08);
+            glow_boost = 0.72;
+        } else if (skin == 16) { // 16: RPG-7 - Hellfire Solar Phoenix
+            cell = 2;
+            tuv = raw_uv * 1.50 + float2(0.50, 0.25);
+            trim_metal = float3(1.0, 0.82, 0.25);
+            glow_tint = float3(1.0, 0.55, 0.10);
+            glow_boost = 0.82;
+        } else { // 17: M203 Grenade Launcher - Astral Singularity
+            cell = 1;
+            tuv = raw_uv * 1.70 + float2(0.40, 0.40);
+            trim_metal = float3(0.90, 0.82, 0.45);
+            glow_tint = float3(0.35, 0.68, 1.0);
+            glow_boost = 0.78;
         }
+
+        float2 fuv = clamp(frac(tuv), 0.002, 0.998);
+        float2 cell_uv = (float2((float)(cell % 3), (float)(cell / 3)) + fuv) * float2(1.0 / 3.0, 0.5);
+        float3 tex = skin_atlas.SampleLevel(skin_samp, cell_uv, 0.0).rgb;
+
+        if (skin == 15) {
+            float2 lore_uv = (float2(1.0, 1.0) + fuv) * float2(1.0 / 3.0, 0.5);
+            float3 lore_tex = skin_atlas.SampleLevel(skin_samp, lore_uv, 0.0).rgb;
+            tex = lerp(tex, lore_tex, edge_trim * 0.55);
+        } else if (skin == 17) {
+            float2 ice_uv = fuv * float2(1.0 / 3.0, 0.5);
+            float3 ice_tex = skin_atlas.SampleLevel(skin_samp, ice_uv, 0.0).rgb;
+            tex = lerp(tex, ice_tex, edge_trim * 0.48);
+        } else if (skin == 6) {
+            tex = float3(tex.r * 0.78 + tex.b * 0.22, tex.g * 0.95 + tex.b * 0.18, saturate(tex.b * 1.15));
+        } else if (skin == 8) {
+            tex = lerp(tex, float3(tex.b * 0.85, saturate(tex.g * 1.08), saturate(tex.b * 1.12)), 0.35);
+        } else if (skin == 12) {
+            tex = float3(saturate(tex.r * 1.12), tex.g * 1.05, tex.b * 0.85);
+        }
+
+        float tex_luma = dot(tex, float3(0.299, 0.587, 0.114));
+        float tex_sat = max(tex.r, max(tex.g, tex.b)) - min(tex.r, min(tex.g, tex.b));
+        float energy_mask = saturate((tex_sat - 0.32) * 2.2) * smoothstep(0.22, 0.72, tex_luma);
+        float wave = sin(tuv.x * 5.0 + tuv.y * 3.5 - t * 2.6) * 0.5 + 0.5;
+        float pulse = 0.72 + 0.58 * pow(max(wave, 0.0001), 3.0);
+        float metal_glint = pow(max(sin(tuv.x * 3.2 - tuv.y * 2.1 + t * 1.8) * 0.5 + 0.5, 0.0001), 8.0);
+
+        float3 sculpted = tex * shade;
+        sculpted = lerp(sculpted, trim_metal * shade * (0.85 + 0.35 * tex_luma), edge_trim * 0.28);
+        float3 emissive = glow_tint * energy_mask * glow_boost * pulse;
+        float3 specular = trim_metal * (spec * 0.52 + metal_glint * edge_trim * 0.22);
+        float3 camo = sculpted + emissive + specular;
         outc.rgb = lerp(outc.rgb, saturate(camo), mask);
     }
 )";
@@ -1224,6 +1320,7 @@ private:
     void DrawFrame(Target* t, uint32_t index);
     void RenderUi();
     void UploadGammaRamp();
+    void UploadMythicAtlas();
     void UploadSkin();
     void ReleaseOldTextures();
     void ApplySettings();
@@ -1305,6 +1402,8 @@ private:
     bool ui_ = false;
     uint8_t ramp_[768] = {};
     bool ramp_dirty_ = false;
+    Image mythic_atlas_;  // the 3x2 Mythic weapon skin texture atlas (skins/mythic_atlas.png), made once
+    bool mythic_tried_ = false;
     Image skin_;  // the touch controls' button skins (touch.cpp), made once
     bool skin_tried_ = false;
     bool gamma_ = false;
@@ -1659,7 +1758,7 @@ bool VulkanBackend::CreateLayouts() {
     VK_CHECK(vkCreatePipelineLayout(dev_, &pi, nullptr, &layout_));
     // pipelines from earlier runs: building them is what stutters on a phone
     std::vector<char> blob;
-    std::ifstream f(app::ExeDir() / "shadercache" / "pipelines.bin", std::ios::binary);
+    std::ifstream f(app::ExeDir() / "shadercache" / "pipelines_v3.bin", std::ios::binary);
     if (f) blob.assign(std::istreambuf_iterator<char>(f), {});
     VkPipelineCacheCreateInfo ci{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
     ci.initialDataSize = blob.size();
@@ -2168,14 +2267,17 @@ void VulkanBackend::SetScissor(int32_t x0, int32_t y0, int32_t x1, int32_t y1) {
 // combination a frame
 VkDescriptorSet VulkanBackend::Set(const VkImageView views[4], const VkSampler samplers[4]) {
     Frame& f = CurrentFrame();
+    VkImageView atlas_view = mythic_atlas_.view ? mythic_atlas_.view : dummy_[0].view;
+    VkSampler atlas_samp = linear_ ? linear_ : point_;
     uint64_t key = Hash(views, sizeof(VkImageView) * 4, Hash(samplers, sizeof(VkSampler) * 4));
+    key = Hash(&atlas_view, sizeof(atlas_view), key);
     if (auto it = f.sets.find(key); it != f.sets.end()) return it->second;
     VkDescriptorSet set = VK_NULL_HANDLE;
     for (;;) {
         if (f.pool_at == f.pools.size()) {
             VkDescriptorPoolSize sizes[3] = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, kSetsPerPool * 2},
-                                             {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, kSetsPerPool * 4},
-                                             {VK_DESCRIPTOR_TYPE_SAMPLER, kSetsPerPool * 4}};
+                                             {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, kSetsPerPool * 5},
+                                             {VK_DESCRIPTOR_TYPE_SAMPLER, kSetsPerPool * 5}};
             VkDescriptorPoolCreateInfo pi{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
             pi.maxSets = kSetsPerPool;
             pi.poolSizeCount = 3;
@@ -2192,7 +2294,7 @@ VkDescriptorSet VulkanBackend::Set(const VkImageView views[4], const VkSampler s
         f.pool_at++;
     }
     VkDescriptorBufferInfo bi{f.upload.buf, 0, kUboRange};
-    VkDescriptorImageInfo ii[4], si[4];
+    VkDescriptorImageInfo ii[5], si[5];
     VkWriteDescriptorSet w[vkshader::kBindings];
     for (uint32_t i = 0; i < vkshader::kBindings; i++) {
         w[i] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
@@ -2204,12 +2306,14 @@ VkDescriptorSet VulkanBackend::Set(const VkImageView views[4], const VkSampler s
             w[i].pBufferInfo = &bi;
         } else if (i < vkshader::kBindingSamplers) {
             uint32_t s = i - vkshader::kBindingTextures;
-            ii[s] = {VK_NULL_HANDLE, views[s] ? views[s] : dummy_[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+            VkImageView v = s < 4 ? (views[s] ? views[s] : dummy_[0].view) : atlas_view;
+            ii[s] = {VK_NULL_HANDLE, v, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
             w[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             w[i].pImageInfo = &ii[s];
         } else {
             uint32_t s = i - vkshader::kBindingSamplers;
-            si[s] = {samplers[s] ? samplers[s] : point_, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
+            VkSampler sp = s < 4 ? (samplers[s] ? samplers[s] : point_) : atlas_samp;
+            si[s] = {sp, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
             w[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
             w[i].pImageInfo = &si[s];
         }
@@ -2973,7 +3077,10 @@ void VulkanBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t
     bool gun_draw = s.vsc[58][3] > 0.5f;
     if (gun_draw && game::Opt().weapon_skin && !SimpleState(s, kMBlendEnable)) {
         using clock = std::chrono::steady_clock;
-        c.ext[0] = float(game::Opt().weapon_skin);
+        uint32_t opt_skin = game::Opt().weapon_skin;
+        uint32_t active_skin = opt_skin == 1 ? weapons::HeldSkinId() : std::min<uint32_t>(opt_skin - 1, 17u);
+        if (active_skin < 1 || active_skin > 17) active_skin = 1;
+        c.ext[0] = float(active_skin);
         c.ext[1] = std::fmod(std::chrono::duration<float>(clock::now().time_since_epoch()).count(), 1000.0f);
     }
     Alloc vc = Constants(s.vsc.data(), sizeof(s.vsc));
@@ -3385,6 +3492,40 @@ void VulkanBackend::UploadGammaRamp() {
     Transition(lut_, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
+// the 3x2 Mythic weapon skin texture atlas (skins/mythic_atlas.png), sampled at t4 in 3D pixel shaders
+void VulkanBackend::UploadMythicAtlas() {
+    mythic_tried_ = true;
+    SDL_Surface* png = SDL_LoadPNG("skins/mythic_atlas.png");
+    SDL_Surface* s = png ? SDL_ConvertSurface(png, SDL_PIXELFORMAT_ABGR8888) : nullptr;
+    SDL_DestroySurface(png);
+    if (!s) {
+        LOGE("vulkan: skins/mythic_atlas.png: %s", SDL_GetError());
+        return;
+    }
+    uint32_t w = uint32_t(s->w), h = uint32_t(s->h);
+    size_t total = size_t(w) * h * 4;
+    constexpr VkImageUsageFlags kSampled = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (!CreateImage(mythic_atlas_, VK_FORMAT_R8G8B8A8_UNORM, w, h, 1, 1, 1, kSampled, VK_IMAGE_VIEW_TYPE_2D)) {
+        SDL_DestroySurface(s);
+        return;
+    }
+    Alloc a = Upload(total, 16);
+    if (!a.cpu) {
+        SDL_DestroySurface(s);
+        Destroy(mythic_atlas_);
+        return;
+    }
+    for (uint32_t y = 0; y < h; y++) {
+        std::memcpy(a.cpu + size_t(y) * w * 4, static_cast<const uint8_t*>(s->pixels) + size_t(y) * s->pitch, size_t(w) * 4);
+    }
+    SDL_DestroySurface(s);
+    Transition(mythic_atlas_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VkBufferImageCopy c{a.off, 0, 0, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}, {0, 0, 0}, {w, h, 1}};
+    vkCmdCopyBufferToImage(Cb(), a.buf, mythic_atlas_.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &c);
+    Transition(mythic_atlas_, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    LOGI("vulkan: loaded mythic weapon atlas %ux%u", w, h);
+}
+
 // the touch controls' skins as an ImGui texture; without them the controls keep their drawn icons
 void VulkanBackend::UploadSkin() {
     skin_tried_ = true;
@@ -3442,7 +3583,7 @@ void VulkanBackend::SavePipelineCache() {
     if (vkGetPipelineCacheData(dev_, cache_, &size, nullptr) != VK_SUCCESS || size == cache_saved_) return;
     std::vector<char> blob(size);
     if (vkGetPipelineCacheData(dev_, cache_, &size, blob.data()) != VK_SUCCESS) return;
-    std::filesystem::path p = app::ExeDir() / "shadercache" / "pipelines.bin", tmp = p;
+    std::filesystem::path p = app::ExeDir() / "shadercache" / "pipelines_v3.bin", tmp = p;
     tmp += ".tmp";
     {
         std::ofstream f(tmp, std::ios::binary);
@@ -3457,6 +3598,7 @@ void VulkanBackend::Present(const Surface& front) {
     Target* t = EnsureTarget(front, false);
     if (t && LatchCpuWrite(*t)) UploadTarget(*t, front);
     if (ramp_dirty_) UploadGammaRamp();
+    if (!mythic_tried_) UploadMythicAtlas();
     if (!skin_tried_) UploadSkin();
     uint32_t index = 0;
     bool shown = AcquireImage(index);

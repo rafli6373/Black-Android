@@ -1,5 +1,6 @@
 #pragma once
 // The weapons page of the F10 panel: any of the game's player weapons in any level (weapons.cpp)
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -17,8 +18,9 @@ struct View {
     std::string status;  // the last thing done, or why it could not be
 };
 
-View Current();      // any thread
-void Give(int type);  // any thread: done on the game thread's next tick
-void FillAmmo();      // any thread: both slots' ammunition to full
+View Current();         // any thread
+void Give(int type);    // any thread: done on the game thread's next tick
+void FillAmmo();        // any thread: both slots' ammunition to full
+uint32_t HeldSkinId();  // any thread: 1..17 Mythic skin ID of the weapon currently in hand
 
 }  // namespace weapons

@@ -121,6 +121,28 @@ std::mutex g_lock;
 weapons::View g_view;
 std::atomic<int> g_give{-1};
 std::atomic<bool> g_fill{false};
+std::atomic<uint32_t> g_held_skin{1};
+
+uint32_t SkinIdForCode(const std::string& code) {
+    if (code == "AK1" || code == "AK5") return 1;   // AK-47
+    if (code == "M16" || code == "M45") return 2;   // M16A2
+    if (code == "BNS") return 3;                    // M16A2 + M203
+    if (code == "ASR" || code == "AS5") return 4;   // G36C
+    if (code == "MP1" || code == "MP5") return 5;   // MP5
+    if (code == "P90" || code == "P95") return 6;   // FN P90
+    if (code == "SM3" || code == "MC5") return 7;   // MAC-10
+    if (code == "SMG" || code == "SM5") return 8;   // Uzi
+    if (code == "PST" || code == "PS5") return 9;   // Pistol (DC3)
+    if (code == "GK1" || code == "GK5") return 10;  // Glock 19
+    if (code == "MGN" || code == "MG5") return 11;  // Magnum .44
+    if (code == "RM1" || code == "RM5") return 12;  // Remington 870
+    if (code == "SHG" || code == "SH5") return 13;  // SPAS 12
+    if (code == "SNR" || code == "SN5") return 14;  // Walther WA2000
+    if (code == "HVY" || code == "HV5") return 15;  // M249 SAW
+    if (code == "RPG") return 16;                   // RPG-7
+    if (code == "GRL") return 17;                   // M203 Grenade Launcher
+    return 1;
+}
 
 void SetStatus(const std::string& text) {
     std::lock_guard<std::mutex> lock(g_lock);
@@ -442,6 +464,22 @@ void DoFill() {
     SetStatus("Ammunition full");
 }
 
+void UpdateHeldSkin() {
+    Level l;
+    if (!ReadLevel(l)) return;
+    uint32_t w = R32(l.inventory + kInvHeld);
+    if (!w) {
+        int s = G<int8_t>(l.inventory + kInvSlotHeld);
+        if (s >= 0 && s < 2) w = Slot(l, s);
+    }
+    if (!w) return;
+    int type = G<uint8_t>(w + kWeaponType);
+    if (type < 0 || type >= l.count) return;
+    std::string key_name = Decode(EntryKey(l, type));
+    std::string code = key_name.size() > 4 && key_name.compare(0, 4, "BG1_") == 0 ? key_name.substr(4) : key_name;
+    if (!code.empty()) g_held_skin.store(SkinIdForCode(code), std::memory_order_relaxed);
+}
+
 }  // namespace
 
 namespace weapons {
@@ -455,6 +493,8 @@ void Give(int type) { g_give = type; }
 
 void FillAmmo() { g_fill = true; }
 
+uint32_t HeldSkinId() { return g_held_skin.load(std::memory_order_relaxed); }
+
 }  // namespace weapons
 
 // game thread, each menu and HUD tick (hooks.cpp MenuTick)
@@ -462,6 +502,7 @@ void WeaponsTick(X86Context& ctx) {
     static int tick;
     if (int type = g_give.exchange(-1); type >= 0) DoGive(ctx, type);
     if (g_fill.exchange(false)) DoFill();
+    UpdateHeldSkin();
     if (++tick % 10 == 0) Refresh();
 }
 

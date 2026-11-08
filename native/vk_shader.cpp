@@ -19,7 +19,7 @@ namespace {
 std::filesystem::path g_dir;
 std::mutex g_lock;
 // bumped when the translation below changes, so older cached modules are not used
-constexpr uint32_t kCacheVersion = 2;
+constexpr uint32_t kCacheVersion = 3;
 
 struct Param {
     std::string type, name;
@@ -95,6 +95,9 @@ std::string Specialize(const std::string& hlsl) {
 // fxc's spellings glslang does not read: 1.#INF for infinity
 std::string Adapt(const std::string& hlsl) {
     std::string s = Specialize(hlsl);
+    if (size_t main_pos = s.rfind("\nfloat4 main("); main_pos != std::string::npos) {
+        s.insert(main_pos, "\nTexture2D skin_atlas : register(t4);\nSamplerState skin_samp : register(s4);\n");
+    }
     for (size_t at; (at = s.find("1.#INF")) != std::string::npos;) s.replace(at, 6, "asfloat(0x7F800000u)");
     // the vertex inputs at the location of their register, ATTRn: the pipeline's attributes are numbered so
     static const std::regex attr(R"((\n[ \t]*)(\w+ v\d+ : ATTR(\d+);))");

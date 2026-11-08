@@ -110,9 +110,28 @@ constexpr uint32_t kScreenFilters[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 const char* const kScreenFilterNames[] = {"OFF",       "CRT LIGHT", "CRT STRONG",   "SHARPEN",
                                           "VIBRANT",   "NOIR",      "SEPIA",        "NIGHT VISION",
                                           "VHS",       "CINEMATIC", "THERMAL",      "CYBERPUNK"};
-constexpr uint32_t kWeaponSkins[] = {0, 1, 2, 3, 4, 5, 6, 7};
-const char* const kWeaponSkinNames[] = {"OFF",         "CODM GOLD",   "CODM DIAMOND", "CODM DAMASCUS",
-                                        "DARK MATTER", "MAGMA LAVA",  "CYBER NEON",   "JADE EMERALD"};
+constexpr uint32_t kWeaponSkins[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
+const char* const kWeaponSkinNames[] = {
+    "OFF",
+    "AUTO MYTHIC (17)",
+    "AK-47 DRAGON LORE",
+    "M16 FROSTFIRE",
+    "M16+M203 RED DRAGON",
+    "G36C SINGULARITY",
+    "MP5 SOLAR PHOENIX",
+    "P90 VOID VORTEX",
+    "MAC-10 RUBY PHOENIX",
+    "UZI GLACIER DRAGON",
+    "DC3 EMPEROR GOLD",
+    "GLOCK ABYSSAL VOID",
+    "MAGNUM BLOOD DRAGON",
+    "R870 DRAGONBREATH",
+    "SPAS-12 FROSTWYRM",
+    "WA2000 JADE DRAGON",
+    "M249 IMPERIAL WYRM",
+    "RPG-7 FIRE PHOENIX",
+    "M203 ASTRAL VOID",
+};
 const char* const kGraphicsPresetNames[] = {"CUSTOM",            "AUTO (RECOMMENDED)", "LOW (BATTERY)",
                                             "MEDIUM (BALANCED)", "HIGH (GAMING)",      "ULTRA (FLAGSHIP)",
                                             "ESPORTS (MAX FPS)"};
@@ -169,7 +188,7 @@ void Section(const char* title) {
     ImGui::Dummy(ImVec2(0, em * 0.2f));
 }
 
-constexpr float kValueEms = 12.0f;  // the value column's width
+constexpr float kValueEms = 13.5f;  // the value column's width
 
 // a row's place and size: the label left, the value block (an arrow each side of the value) right
 struct RowBox {
