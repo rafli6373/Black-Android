@@ -110,10 +110,31 @@ constexpr uint32_t kScreenFilters[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 const char* const kScreenFilterNames[] = {"OFF",       "CRT LIGHT", "CRT STRONG",   "SHARPEN",
                                           "VIBRANT",   "NOIR",      "SEPIA",        "NIGHT VISION",
                                           "VHS",       "CINEMATIC", "THERMAL",      "CYBERPUNK"};
-constexpr uint32_t kWeaponSkins[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
+constexpr uint32_t kWeaponSkins[] = {
+    0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18,
+    19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+};
 const char* const kWeaponSkinNames[] = {
     "OFF",
+    "AUTO TACTICAL (17)",
     "AUTO MYTHIC (17)",
+    "AK-47 POINT DISARRAY",
+    "M16 SCORPION SPECOPS",
+    "M16+M203 YELLOW TAG",
+    "G36C SPECOPS GOLD",
+    "MP5 CYBER PRISM",
+    "P90 URBAN GRAFFITI",
+    "MAC-10 STREET YLW",
+    "UZI SHARD DISARRAY",
+    "DC3 SCORPION GOLD",
+    "GLOCK WHITEOUT TAG",
+    "MAGNUM SF HAZARD",
+    "R870 CYBER SHARD",
+    "SPAS-12 SF SCORPION",
+    "WA2000 PROTO YLW",
+    "M249 SPECOPS STARS",
+    "RPG-7 HAZARD GRAFF",
+    "M203 PRISM DISARRAY",
     "AK-47 DRAGON LORE",
     "M16 FROSTFIRE",
     "M16+M203 RED DRAGON",
@@ -132,6 +153,7 @@ const char* const kWeaponSkinNames[] = {
     "RPG-7 FIRE PHOENIX",
     "M203 ASTRAL VOID",
 };
+static_assert(std::size(kWeaponSkins) == std::size(kWeaponSkinNames));
 const char* const kGraphicsPresetNames[] = {"CUSTOM",            "AUTO (RECOMMENDED)", "LOW (BATTERY)",
                                             "MEDIUM (BALANCED)", "HIGH (GAMING)",      "ULTRA (FLAGSHIP)",
                                             "ESPORTS (MAX FPS)"};

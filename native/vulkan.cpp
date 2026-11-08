@@ -227,7 +227,7 @@ float4 pscolor(O i) : SV_Target {
 }
 )";
 
-// 17 bespoke texture-mapped Mythic / Legendary weapon skins (ext.x = 1..17 weapon skin id, ext.y = seconds)
+// 34 bespoke texture-mapped weapon skins: 1..17 Mythic Pack + 18..34 Tactical CS2 Custom Pack (ext.x = 1..34, ext.y = seconds)
 struct WeaponSkinHooks final : ShaderHooks {
     std::string Output() const override {
         return R"(
@@ -345,46 +345,138 @@ struct WeaponSkinHooks final : ShaderHooks {
             trim_metal = float3(1.0, 0.82, 0.25);
             glow_tint = float3(1.0, 0.55, 0.10);
             glow_boost = 0.82;
-        } else { // 17: M203 Grenade Launcher - Astral Singularity
+        } else if (skin == 17) { // 17: M203 Grenade Launcher - Astral Singularity
             cell = 1;
             tuv = raw_uv * 1.70 + float2(0.40, 0.40);
             trim_metal = float3(0.90, 0.82, 0.45);
             glow_tint = float3(0.35, 0.68, 1.0);
             glow_boost = 0.78;
+        } else if (skin == 18) { // 18: AK-47 - Point Disarray Shards (CS2 Tactical)
+            cell = 8;
+            tuv = raw_uv * 1.45;
+            trim_metal = float3(0.10, 0.78, 1.0);
+        } else if (skin == 19) { // 19: M16A2 - Special Forces Scorpion (CS2 Tactical)
+            cell = 6;
+            tuv = raw_uv * 1.42;
+            trim_metal = float3(1.0, 0.72, 0.12);
+        } else if (skin == 20) { // 20: M16A2 + M203 - Racing Yellow Street Graffiti
+            cell = 10;
+            tuv = raw_uv * 1.45;
+            trim_metal = float3(1.0, 0.84, 0.08);
+        } else if (skin == 21) { // 21: G36C - Special Forces Gold & White Stars
+            cell = 7;
+            tuv = raw_uv * 1.50;
+            trim_metal = float3(1.0, 0.74, 0.15);
+        } else if (skin == 22) { // 22: MP5 - Frontside Cyber Prism Cross-Grid
+            cell = 9;
+            tuv = raw_uv * 1.55;
+            trim_metal = float3(0.96, 0.18, 0.24);
+        } else if (skin == 23) { // 23: FN P90 - Ceramic White & Cyber Yellow Urban Graffiti
+            cell = 11;
+            tuv = raw_uv * 1.55 + float2(0.18, 0.12);
+            trim_metal = float3(1.0, 0.86, 0.10);
+        } else if (skin == 24) { // 24: MAC-10 - Compact Street Yellow Tag
+            cell = 10;
+            tuv = raw_uv * 1.78 + float2(0.35, 0.22);
+            trim_metal = float3(1.0, 0.82, 0.06);
+        } else if (skin == 25) { // 25: Uzi - Shard Disarray Origami
+            cell = 8;
+            tuv = raw_uv * 1.80 + float2(0.42, 0.28);
+            trim_metal = float3(0.14, 0.84, 1.0);
+        } else if (skin == 26) { // 26: Pistol DC3 - Special Forces Scorpion Gold Slide
+            cell = 6;
+            tuv = raw_uv * 1.85 + float2(0.12, 0.24);
+            trim_metal = float3(1.0, 0.75, 0.14);
+        } else if (skin == 27) { // 27: Glock 19 - Whiteout Street Graffiti Slide
+            cell = 11;
+            tuv = raw_uv * 1.90 + float2(0.48, 0.30);
+            trim_metal = float3(0.95, 0.95, 0.97);
+        } else if (skin == 28) { // 28: Magnum .44 - Special Forces Gold Hazard Revolver
+            cell = 7;
+            tuv = raw_uv * 1.72 + float2(0.25, 0.45);
+            trim_metal = float3(1.0, 0.76, 0.16);
+        } else if (skin == 29) { // 29: Remington 870 - Cyber Shard & Crimson Monogram
+            cell = 9;
+            tuv = raw_uv * float2(1.42, 1.65) + float2(0.15, 0.10);
+            trim_metal = float3(0.12, 0.80, 1.0);
+        } else if (skin == 30) { // 30: SPAS 12 - Heavy SpecOps Scorpion & Hazard Shield
+            cell = 6;
+            tuv = raw_uv * float2(1.45, 1.65) + float2(0.28, 0.35);
+            trim_metal = float3(1.0, 0.72, 0.12);
+        } else if (skin == 31) { // 31: Walther WA2000 - Prototype Yellow/White Sniper Tag
+            cell = 10;
+            tuv = raw_uv * 1.48 + float2(0.08, 0.16);
+            trim_metal = float3(0.88, 0.70, 0.46);
+        } else if (skin == 32) { // 32: M249 SAW - Special Forces Stars & Gold Hazard LMG
+            cell = 7;
+            tuv = raw_uv * 1.38 + float2(0.05, 0.08);
+            trim_metal = float3(1.0, 0.74, 0.14);
+        } else if (skin == 33) { // 33: RPG-7 - Industrial Hazard Yellow Graffiti Launcher
+            cell = 10;
+            tuv = raw_uv * 1.40 + float2(0.50, 0.18);
+            trim_metal = float3(1.0, 0.85, 0.08);
+        } else { // 34: M203 Grenade Launcher - Prism Disarray Shards
+            cell = 8;
+            tuv = raw_uv * 1.52 + float2(0.32, 0.38);
+            trim_metal = float3(0.98, 0.22, 0.28);
         }
 
         float2 fuv = clamp(frac(tuv), 0.002, 0.998);
-        float2 cell_uv = (float2((float)(cell % 3), (float)(cell / 3)) + fuv) * float2(1.0 / 3.0, 0.5);
+        float2 cell_uv = (float2((float)(cell % 3), (float)(cell / 3)) + fuv) * float2(1.0 / 3.0, 0.25);
         float3 tex = skin_atlas.SampleLevel(skin_samp, cell_uv, 0.0).rgb;
 
-        if (skin == 15) {
-            float2 lore_uv = (float2(1.0, 1.0) + fuv) * float2(1.0 / 3.0, 0.5);
-            float3 lore_tex = skin_atlas.SampleLevel(skin_samp, lore_uv, 0.0).rgb;
-            tex = lerp(tex, lore_tex, edge_trim * 0.55);
-        } else if (skin == 17) {
-            float2 ice_uv = fuv * float2(1.0 / 3.0, 0.5);
-            float3 ice_tex = skin_atlas.SampleLevel(skin_samp, ice_uv, 0.0).rgb;
-            tex = lerp(tex, ice_tex, edge_trim * 0.48);
-        } else if (skin == 6) {
-            tex = float3(tex.r * 0.78 + tex.b * 0.22, tex.g * 0.95 + tex.b * 0.18, saturate(tex.b * 1.15));
-        } else if (skin == 8) {
-            tex = lerp(tex, float3(tex.b * 0.85, saturate(tex.g * 1.08), saturate(tex.b * 1.12)), 0.35);
-        } else if (skin == 12) {
-            tex = float3(saturate(tex.r * 1.12), tex.g * 1.05, tex.b * 0.85);
+        float3 camo;
+        if (skin <= 17) {
+            if (skin == 15) {
+                float2 lore_uv = (float2(1.0, 1.0) + fuv) * float2(1.0 / 3.0, 0.25);
+                float3 lore_tex = skin_atlas.SampleLevel(skin_samp, lore_uv, 0.0).rgb;
+                tex = lerp(tex, lore_tex, edge_trim * 0.55);
+            } else if (skin == 17) {
+                float2 ice_uv = fuv * float2(1.0 / 3.0, 0.25);
+                float3 ice_tex = skin_atlas.SampleLevel(skin_samp, ice_uv, 0.0).rgb;
+                tex = lerp(tex, ice_tex, edge_trim * 0.48);
+            } else if (skin == 6) {
+                tex = float3(tex.r * 0.78 + tex.b * 0.22, tex.g * 0.95 + tex.b * 0.18, saturate(tex.b * 1.15));
+            } else if (skin == 8) {
+                tex = lerp(tex, float3(tex.b * 0.85, saturate(tex.g * 1.08), saturate(tex.b * 1.12)), 0.35);
+            } else if (skin == 12) {
+                tex = float3(saturate(tex.r * 1.12), tex.g * 1.05, tex.b * 0.85);
+            }
+
+            float tex_luma = dot(tex, float3(0.299, 0.587, 0.114));
+            float tex_sat = max(tex.r, max(tex.g, tex.b)) - min(tex.r, min(tex.g, tex.b));
+            float energy_mask = saturate((tex_sat - 0.32) * 2.2) * smoothstep(0.22, 0.72, tex_luma);
+            float wave = sin(tuv.x * 5.0 + tuv.y * 3.5 - t * 2.6) * 0.5 + 0.5;
+            float pulse = 0.72 + 0.58 * pow(max(wave, 0.0001), 3.0);
+            float metal_glint = pow(max(sin(tuv.x * 3.2 - tuv.y * 2.1 + t * 1.8) * 0.5 + 0.5, 0.0001), 8.0);
+
+            float3 sculpted = tex * shade;
+            sculpted = lerp(sculpted, trim_metal * shade * (0.85 + 0.35 * tex_luma), edge_trim * 0.28);
+            float3 emissive = glow_tint * energy_mask * glow_boost * pulse;
+            float3 specular = trim_metal * (spec * 0.52 + metal_glint * edge_trim * 0.22);
+            camo = sculpted + emissive + specular;
+        } else {
+            if (skin == 29) {
+                float2 shard_uv = (float2(2.0, 2.0) + fuv) * float2(1.0 / 3.0, 0.25);
+                float3 shard_tex = skin_atlas.SampleLevel(skin_samp, shard_uv, 0.0).rgb;
+                tex = lerp(tex, shard_tex, smoothstep(0.35, 0.68, luma) * 0.65);
+            } else if (skin == 30) {
+                float2 sf_uv = (float2(1.0, 2.0) + fuv) * float2(1.0 / 3.0, 0.25);
+                float3 sf_tex = skin_atlas.SampleLevel(skin_samp, sf_uv, 0.0).rgb;
+                tex = lerp(tex, sf_tex, smoothstep(0.45, 0.78, luma) * 0.50);
+            } else if (skin == 31) {
+                float2 urb_uv = (float2(2.0, 3.0) + fuv) * float2(1.0 / 3.0, 0.25);
+                float3 urb_tex = skin_atlas.SampleLevel(skin_samp, urb_uv, 0.0).rgb;
+                tex = lerp(tex, urb_tex, smoothstep(0.42, 0.75, luma) * 0.52);
+            }
+
+            float tac_shade = clamp(0.62 + luma * 0.92, 0.45, 1.28);
+            float tac_edge = smoothstep(0.54, 0.86, luma);
+            float3 paint = saturate((tex - 0.5) * 1.08 + 0.5) * tac_shade;
+            paint = lerp(paint, trim_metal * tac_shade, tac_edge * 0.20);
+            float3 tac_spec = trim_metal * (spec * 0.32);
+            camo = paint + tac_spec;
         }
-
-        float tex_luma = dot(tex, float3(0.299, 0.587, 0.114));
-        float tex_sat = max(tex.r, max(tex.g, tex.b)) - min(tex.r, min(tex.g, tex.b));
-        float energy_mask = saturate((tex_sat - 0.32) * 2.2) * smoothstep(0.22, 0.72, tex_luma);
-        float wave = sin(tuv.x * 5.0 + tuv.y * 3.5 - t * 2.6) * 0.5 + 0.5;
-        float pulse = 0.72 + 0.58 * pow(max(wave, 0.0001), 3.0);
-        float metal_glint = pow(max(sin(tuv.x * 3.2 - tuv.y * 2.1 + t * 1.8) * 0.5 + 0.5, 0.0001), 8.0);
-
-        float3 sculpted = tex * shade;
-        sculpted = lerp(sculpted, trim_metal * shade * (0.85 + 0.35 * tex_luma), edge_trim * 0.28);
-        float3 emissive = glow_tint * energy_mask * glow_boost * pulse;
-        float3 specular = trim_metal * (spec * 0.52 + metal_glint * edge_trim * 0.22);
-        float3 camo = sculpted + emissive + specular;
         outc.rgb = lerp(outc.rgb, saturate(camo), mask);
     }
 )";
@@ -1402,7 +1494,7 @@ private:
     bool ui_ = false;
     uint8_t ramp_[768] = {};
     bool ramp_dirty_ = false;
-    Image mythic_atlas_;  // the 3x2 Mythic weapon skin texture atlas (skins/mythic_atlas.png), made once
+    Image mythic_atlas_;  // the 3x4 Mythic & Tactical weapon skin texture atlas (skins/mythic_atlas.png), made once
     bool mythic_tried_ = false;
     Image skin_;  // the touch controls' button skins (touch.cpp), made once
     bool skin_tried_ = false;
@@ -1758,7 +1850,7 @@ bool VulkanBackend::CreateLayouts() {
     VK_CHECK(vkCreatePipelineLayout(dev_, &pi, nullptr, &layout_));
     // pipelines from earlier runs: building them is what stutters on a phone
     std::vector<char> blob;
-    std::ifstream f(app::ExeDir() / "shadercache" / "pipelines_v3.bin", std::ios::binary);
+    std::ifstream f(app::ExeDir() / "shadercache" / "pipelines_v4.bin", std::ios::binary);
     if (f) blob.assign(std::istreambuf_iterator<char>(f), {});
     VkPipelineCacheCreateInfo ci{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
     ci.initialDataSize = blob.size();
@@ -3078,8 +3170,13 @@ void VulkanBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t
     if (gun_draw && game::Opt().weapon_skin && !SimpleState(s, kMBlendEnable)) {
         using clock = std::chrono::steady_clock;
         uint32_t opt_skin = game::Opt().weapon_skin;
-        uint32_t active_skin = opt_skin == 1 ? weapons::HeldSkinId() : std::min<uint32_t>(opt_skin - 1, 17u);
-        if (active_skin < 1 || active_skin > 17) active_skin = 1;
+        uint32_t held = weapons::HeldSkinId();
+        if (held < 1 || held > 17) held = 1;
+        uint32_t active_skin = held + 17;
+        if (opt_skin == 1) active_skin = held + 17;
+        else if (opt_skin == 2) active_skin = held;
+        else if (opt_skin >= 3 && opt_skin <= 19) active_skin = opt_skin + 15;
+        else if (opt_skin >= 20 && opt_skin <= 36) active_skin = opt_skin - 19;
         c.ext[0] = float(active_skin);
         c.ext[1] = std::fmod(std::chrono::duration<float>(clock::now().time_since_epoch()).count(), 1000.0f);
     }
@@ -3492,7 +3589,7 @@ void VulkanBackend::UploadGammaRamp() {
     Transition(lut_, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-// the 3x2 Mythic weapon skin texture atlas (skins/mythic_atlas.png), sampled at t4 in 3D pixel shaders
+// the 3x4 Mythic & Tactical weapon skin texture atlas (skins/mythic_atlas.png), sampled at t4 in 3D pixel shaders
 void VulkanBackend::UploadMythicAtlas() {
     mythic_tried_ = true;
     SDL_Surface* png = SDL_LoadPNG("skins/mythic_atlas.png");
@@ -3583,7 +3680,7 @@ void VulkanBackend::SavePipelineCache() {
     if (vkGetPipelineCacheData(dev_, cache_, &size, nullptr) != VK_SUCCESS || size == cache_saved_) return;
     std::vector<char> blob(size);
     if (vkGetPipelineCacheData(dev_, cache_, &size, blob.data()) != VK_SUCCESS) return;
-    std::filesystem::path p = app::ExeDir() / "shadercache" / "pipelines_v3.bin", tmp = p;
+    std::filesystem::path p = app::ExeDir() / "shadercache" / "pipelines_v4.bin", tmp = p;
     tmp += ".tmp";
     {
         std::ofstream f(tmp, std::ios::binary);
