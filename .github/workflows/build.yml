@@ -46,26 +46,92 @@ jobs:
           java-version: 17
           cache: gradle
 
-      - name: Setup ccache for fast C++ rebuilds
-        shell: pwsh
-        run: |
-          choco install ccache -y --no-progress
-          $ccachePath = (Get-Command ccache).Source
-          $ccacheDir = Join-Path $env:RUNNER_TEMP "ccache"
-          Write-Output "CCACHE_BIN=$ccachePath" >> $env:GITHUB_ENV
-          Write-Output "CCACHE_DIR=$ccacheDir" >> $env:GITHUB_ENV
-
       - name: Restore C++ & Recompiler Cache
         uses: actions/cache@v4
         with:
           path: |
             ${{ runner.temp }}/ccache
+            out/build/ccache-bin
             out/build/android-tools
             third_party/SDL
           key: black-android-cache-${{ hashFiles('config/game.toml', 'CMakeLists.txt', 'app/build.gradle') }}-${{ github.sha }}
           restore-keys: |
             black-android-cache-${{ hashFiles('config/game.toml', 'CMakeLists.txt', 'app/build.gradle') }}-
             black-android-cache-
+
+      - name: Setup ccache for fast C++ rebuilds
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Continue"
+          $binDir = Join-Path $PWD "out\build\ccache-bin"
+          New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+          $cachedExe = Join-Path $binDir "ccache.exe"
+          $ccacheExe = $null
+
+          if (Test-Path $cachedExe) {
+            Write-Host "Using cached ccache binary: $cachedExe"
+            $ccacheExe = $cachedExe
+          } elseif ($existing = Get-Command ccache -ErrorAction SilentlyContinue) {
+            $ccacheExe = $existing.Source
+          } else {
+            $dlDir = Join-Path $env:RUNNER_TEMP "ccache-dl"
+            New-Item -ItemType Directory -Force -Path $dlDir | Out-Null
+            $zipPath = Join-Path $dlDir "ccache.zip"
+
+            # 1) Authenticated GitHub CLI release download (avoids unauthenticated 504/rate-limit)
+            gh release download --repo ccache/ccache --pattern "ccache-*-windows-x86_64.zip" --dir $dlDir --clobber 2>$null
+            $ghZip = Get-ChildItem -Path $dlDir -Filter "ccache-*-windows-x86_64.zip" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($ghZip) { Copy-Item $ghZip.FullName $zipPath -Force }
+            if (-not (Test-Path $zipPath) -or (Get-Item $zipPath).Length -lt 100000) {
+              # 2) Direct curl with exponential retries across multiple stable versions
+              $urls = @(
+                "https://github.com/ccache/ccache/releases/download/v4.11.2/ccache-4.11.2-windows-x86_64.zip",
+                "https://github.com/ccache/ccache/releases/download/v4.10.2/ccache-4.10.2-windows-x86_64.zip",
+                "https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-windows-x86_64.zip"
+              )
+              foreach ($u in $urls) {
+                Write-Host "Downloading ccache from $u ..."
+                curl.exe --fail --location --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors $u -o $zipPath
+                if ($LASTEXITCODE -eq 0 -and (Test-Path $zipPath) -and (Get-Item $zipPath).Length -gt 100000) {
+                  break
+                }
+              }
+            }
+
+            if ((Test-Path $zipPath) -and (Get-Item $zipPath).Length -gt 100000) {
+              $extDir = Join-Path $dlDir "extracted"
+              Expand-Archive -Path $zipPath -DestinationPath $extDir -Force
+              $found = Get-ChildItem -Path $extDir -Filter "ccache.exe" -Recurse | Select-Object -First 1
+              if ($found) {
+                Copy-Item $found.FullName $cachedExe -Force
+                $ccacheExe = $cachedExe
+              }
+            }
+
+            # 3) Last-resort Chocolatey fallback (non-fatal if 504 occurs)
+            if (-not $ccacheExe) {
+              choco install ccache -y --no-progress
+              if ($cmd = Get-Command ccache -ErrorAction SilentlyContinue) {
+                Copy-Item $cmd.Source $cachedExe -Force -ErrorAction SilentlyContinue
+                $ccacheExe = $cmd.Source
+              }
+            }
+          }
+
+          if ($ccacheExe -and (Test-Path $ccacheExe)) {
+            $ccacheDir = Join-Path $env:RUNNER_TEMP "ccache"
+            New-Item -ItemType Directory -Force -Path $ccacheDir | Out-Null
+            Add-Content -Path $env:GITHUB_PATH -Value (Split-Path $ccacheExe -Parent)
+            Add-Content -Path $env:GITHUB_ENV -Value "CCACHE_BIN=$ccacheExe"
+            Add-Content -Path $env:GITHUB_ENV -Value "CCACHE_DIR=$ccacheDir"
+            & $ccacheExe --version
+          } else {
+            Write-Host "::warning::ccache download unavailable (upstream 504/timeout); continuing APK build without ccache."
+          }
+          $global:LASTEXITCODE = 0
+          exit 0
 
       - name: Android SDK packages
         shell: cmd
@@ -119,7 +185,12 @@ jobs:
 
       - name: ccache Statistics
         shell: pwsh
-        run: ccache -s
+        run: |
+          if ($env:CCACHE_BIN -and (Test-Path $env:CCACHE_BIN)) {
+            & $env:CCACHE_BIN -s
+          } else {
+            Write-Host "ccache was not active for this run."
+          }
 
       - name: Name the APK
         shell: bash
